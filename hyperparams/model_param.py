@@ -2,6 +2,8 @@ class ModelParam:
     """
     Hyper-parameters for models/model.py
     """
+    model_param_path = "models/vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5"
+
     # content layers
     content_layers = ['block4_conv2']
 

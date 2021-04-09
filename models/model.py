@@ -11,10 +11,9 @@ def get_model():
     :return:
         model: VGG19 with weights
     """
-    weight_file = 'vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5'
-    weight_path = join(dirname(__file__), weight_file)
-    if isfile(weight_path):
-        model = tf.keras.applications.VGG19(include_top=False, weights=weight_path)
+    model_param_path = ModelParam.model_param_path
+    if isfile(model_param_path):
+        model = tf.keras.applications.VGG19(include_top=False, weights=model_param_path)
     else:
         model = tf.keras.applications.VGG19(include_top=False)
 
