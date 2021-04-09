@@ -6,6 +6,7 @@ from hyperparams.train_param import TrainParam
 
 import tensorflow as tf
 import matplotlib.pyplot as plt
+# from tqdm import tqdm
 import os
 
 

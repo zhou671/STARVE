@@ -43,7 +43,7 @@ def tensor_to_image(tensor):
     :return:
         Numpy array.
     """
-    tensor = np.array(tensor, dtype=np.uint8)
+    tensor = tensor.numpy().astype(np.uint8)
     if np.ndim(tensor) > 3:
         assert tensor.shape[0] == 1
         tensor = tensor[0]
