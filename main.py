@@ -25,7 +25,7 @@ def train():
     style_img_path = TrainParam.style_img_path
     content_target = model(tf.constant(load_img(content_img_path)))['content']
     style_target = model(tf.constant(load_img(style_img_path)))['style']
-    generated_image = tf.Variable(load_img(content_img_path))
+    generated_image = tf.Variable(load_img(content_img_path, do_preprocess=False))
 
     for step in trange(TrainParam.n_step):
         train_step(model, generated_image, optimizer, content_target, style_target)
