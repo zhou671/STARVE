@@ -6,7 +6,7 @@ from hyperparams.train_param import TrainParam
 
 import tensorflow as tf
 import matplotlib.pyplot as plt
-# from tqdm import tqdm
+from tqdm import trange
 import os
 
 
@@ -27,7 +27,7 @@ def train():
     style_target = model(tf.constant(load_img(style_img_path)))['style']
     generated_image = tf.Variable(load_img(content_img_path))
 
-    for step in range(TrainParam.n_step):
+    for step in trange(TrainParam.n_step):
         train_step(model, generated_image, optimizer, content_target, style_target)
 
         if (step + 1) % TrainParam.draw_step == 0:

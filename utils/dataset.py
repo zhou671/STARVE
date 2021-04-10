@@ -14,10 +14,10 @@ def load_img(path_to_img, do_preprocess=True):
     """
     img = tf.io.read_file(path_to_img)
     img = tf.image.decode_image(img, channels=3)
-    img *= 255
     img = tf.image.convert_image_dtype(img, tf.float32)
     img = tf.image.resize(img, [DatasetParam.img_h, DatasetParam.img_w])
     img = img[tf.newaxis, :]
+    img *= 255
 
     # preprocess
     if do_preprocess:
@@ -48,7 +48,7 @@ def tensor_to_image(tensor):
         assert tensor.shape[0] == 1
         tensor = tensor[0]
 
-    return tensor.numpy()
+    return tensor
 
 
 # TODO: load image folder
