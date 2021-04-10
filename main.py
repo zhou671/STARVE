@@ -7,9 +7,9 @@ from hyperparams.dataset_param import DatasetParam
 
 import tensorflow as tf
 import matplotlib.pyplot as plt
-from tqdm import trange
+from tqdm import tqdm
 from os import makedirs
-from os.path import join, isdir, basename
+from os.path import join, isdir, basename, splitext
 import glob
 
 
@@ -28,7 +28,6 @@ def preparation():
 
 def train():
     model = STARVE()
-    optimizer = get_optimizer()
 
     # get style target
     style_img_path = DatasetParam.style_img_path
@@ -40,13 +39,25 @@ def train():
                                           '*.{}'.format(DatasetParam.img_fmt)))
     else:
         content_img_list = [DatasetParam.content_img_path]
+    content_img_list.sort(key=lambda x: int(splitext(basename(x))[0]))
 
     for n_img, content_img_path in enumerate(content_img_list):
+        # Call tf.function each time, or there will be
+        # ValueError: tf.function-decorated function tried to create variables on non-first call
+        # because of issues with lazy execution.
+        # https://www.machinelearningplus.com/deep-learning/how-use-tf-function-to-speed-up-python-code-tensorflow/
+        tf_train_step = tf.function(train_step)
+
+        optimizer = get_optimizer()
         content_target = model(tf.constant(load_img(content_img_path)))['content']
         generated_image = tf.Variable(load_img(content_img_path, do_preprocess=False))
 
-        for step in trange(TrainParam.n_step):
-            train_step(model, generated_image, optimizer, content_target, style_target)
+        pbar = tqdm(range(TrainParam.n_step))
+        pbar.set_description_str('[{}/{} {}]'.format(n_img + 1,
+                                                     len(content_img_list),
+                                                     basename(content_img_path)))
+        for step in pbar:
+            tf_train_step(model, generated_image, optimizer, content_target, style_target)
 
             if (step + 1) % TrainParam.draw_step == 0:
                 plt.imsave(join(TrainParam.iter_img_dir, "{}.{}"
@@ -59,7 +70,6 @@ def train():
     return
 
 
-@tf.function()
 def train_step(model, generated_image, optimizer, content_target, style_target):
     with tf.GradientTape() as tape:
         outputs = model(generated_image)
