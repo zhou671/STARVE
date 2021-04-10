@@ -8,7 +8,7 @@ class DatasetParam:
     use_video = True  # Style transfer with a video or an image. True: video; False: image
     content_img_path = r'demo/dog.jpg'
     video_path = r'demo/short_video.mp4'
-    style_img_path = r'demo/style.jpg'
+    style_img_path = r'demo/mrbean.png'
 
     img_fmt = 'jpg'  # frame image format
-    video_fps = 12  # select `video_fps` frames per second
+    video_fps = 24  # select `video_fps` frames per second
