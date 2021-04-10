@@ -36,3 +36,15 @@ def style_content_loss(outputs, style_targets, content_targets):
     loss = style_loss + content_loss
 
     return loss
+
+
+def tv_loss(generated_image):
+    """
+    Total variation loss.
+    :param generated_image: generated image
+    :return:
+        tv loss
+    """
+    loss = LossParam.tv_weight * tf.image.total_variation(generated_image)
+
+    return loss

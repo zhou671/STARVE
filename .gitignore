@@ -5,3 +5,4 @@ __pycache__
 venv
 output
 models/*.h5
+demo/mrbean.mp4
