@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import moviepy.editor as mpy
 from moviepy.video.fx.crop import crop
+from moviepy.video.fx.resize import resize
 from tqdm import tqdm
 from os import makedirs
 from os.path import dirname, join, isdir, basename, splitext
@@ -79,6 +80,7 @@ def prepare_short_video(src_video_path=r'../demo/mrbean.mp4'):
 def video_to_frames(src_video_path, save_folder, img_format=DatasetParam.img_fmt):
     """
     Convert a video to frames.
+    Video size will be (DatasetParam.img_h, DatasetParam.img_w)
     :param src_video_path: video path
     :param save_folder: folder to save frames
     :param img_format: image format, default='jpg'
@@ -86,6 +88,7 @@ def video_to_frames(src_video_path, save_folder, img_format=DatasetParam.img_fmt
         None
     """
     video = mpy.VideoFileClip(src_video_path)
+    video = resize(video, width=DatasetParam.img_w, height=DatasetParam.img_h)
     if not isdir(save_folder):
         makedirs(save_folder)
     for i, frame in tqdm(enumerate(video.iter_frames(fps=DatasetParam.video_fps, dtype="uint8"))):
