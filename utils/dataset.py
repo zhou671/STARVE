@@ -92,7 +92,9 @@ def video_to_frames(src_video_path, save_folder, img_format=DatasetParam.img_fmt
     video = resize(video, width=DatasetParam.img_w, height=DatasetParam.img_h)
     if not isdir(save_folder):
         makedirs(save_folder)
-    for i, frame in tqdm(enumerate(video.iter_frames(fps=DatasetParam.video_fps, dtype="uint8"))):
+    pbar = tqdm(enumerate(video.iter_frames(fps=DatasetParam.video_fps, dtype="uint8")))
+    pbar.set_description_str("Convert video to frames")
+    for i, frame in pbar:
         plt.imsave(join(save_folder, "{}.{}".format(i + 1, img_format)), frame)
 
     return
