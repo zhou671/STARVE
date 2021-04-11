@@ -39,9 +39,9 @@ def train():
     if DatasetParam.use_video:
         content_img_list = glob.glob(join(TrainParam.video_frames_dir,
                                           '*.{}'.format(DatasetParam.img_fmt)))
+        content_img_list.sort(key=lambda x: int(splitext(basename(x))[0]))
     else:
         content_img_list = [DatasetParam.content_img_path]
-    content_img_list.sort(key=lambda x: int(splitext(basename(x))[0]))
 
     for n_img, content_img_path in enumerate(content_img_list):
         # Call tf.function each time, or there will be

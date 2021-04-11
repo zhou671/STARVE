@@ -7,9 +7,10 @@ import moviepy.editor as mpy
 from moviepy.video.fx.crop import crop
 from moviepy.video.fx.resize import resize
 from tqdm import tqdm
-from os import makedirs, system, chdir
-from os.path import dirname, join, isdir, basename, splitext
+from os import makedirs, chdir
+from os.path import dirname, join, isdir, isfile, basename, splitext
 import glob
+from subprocess import run, Popen, PIPE, STDOUT
 
 
 def load_img(path_to_img, do_preprocess=True):
@@ -100,13 +101,58 @@ def video_to_frames(src_video_path, save_folder, img_format=DatasetParam.img_fmt
 def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
     if not isdir(flow_folder):
         makedirs(flow_folder)
-    chdir("./opticFlow")
-    system("chmod +x ./makeOptFlow.sh")
-    system("chmod +x ./run-deepflow.sh")
-    system("chmod +x ./deepflow2-static")
-    system("chmod +x ./deepmatching-static")
-    system("bash ./makeOptFlow ../{}/%d.{} ../{}".format(frame_folder, img_format, flow_folder))
-    chdir("../")
+
+    # make consistency checker
+    if not isfile("./opticFlow/consistencyChecker/consistencyChecker"):
+        chdir("./opticFlow/consistencyChecker")
+        run(["make"])
+        chdir("../../")
+
+    # execution permission
+    deep_match_file = "./opticFlow/deepmatching-static"
+    deep_flow_file = "./opticFlow/deepflow2-static"
+    checker_file = "./opticFlow/consistencyChecker/consistencyChecker"
+    run(["chmod", "+x", deep_match_file])
+    run(["chmod", "+x", deep_flow_file])
+    run(["chmod", "+x", checker_file])
+
+    # optic flow
+    print("Calculating optic flow...")
+    # frame files
+    content_img_list = glob.glob(join(frame_folder, '*.{}'.format(img_format)))
+    content_img_list.sort(key=lambda x: int(splitext(basename(x))[0]))
+    forward_file_name = join(flow_folder, "forward_{}_{}.flo")
+    backward_file_name = join(flow_folder, "backward_{}_{}.flo")
+    reliable_file_name = join(flow_folder, "reliable_{}_{}.pgm")
+    for i in tqdm(range(len(content_img_list) - 1)):
+        j = i + 1
+        # forward optic flow
+        if not isfile(forward_file_name.format(i, j)):
+            p = Popen([deep_match_file, content_img_list[i], content_img_list[j]],
+                       stdout=PIPE)
+            p = Popen([deep_flow_file, content_img_list[i], content_img_list[j],
+                        forward_file_name.format(i, j), '-match'],
+                       stdin=p.stdout)
+            p.communicate()
+
+        # backward optic flow
+        if not isfile(backward_file_name.format(j, i)):
+            p = Popen([deep_match_file, content_img_list[j], content_img_list[i]],
+                       stdout=PIPE)
+            p = Popen([deep_flow_file, content_img_list[j], content_img_list[i],
+                        backward_file_name.format(j, i), '-match'],
+                       stdin=p.stdout)
+            p.communicate()
+
+        # backward-forward check
+        if not isfile(reliable_file_name.format(j, i)):
+            run([checker_file, backward_file_name.format(j, i), forward_file_name.format(i, j),
+                 reliable_file_name.format(j, i)])
+
+        # forward-backward check
+        if not isfile(reliable_file_name.format(i, j)):
+            run([checker_file, forward_file_name.format(i, j), backward_file_name.format(j, i),
+                 reliable_file_name.format(i, j)])
 
 
 def frames_to_video(frame_folder, video_path, img_format=DatasetParam.img_fmt):
