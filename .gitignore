@@ -6,3 +6,4 @@ venv
 output
 models/*.h5
 demo/mrbean.mp4
+opticFlow/consistencyChecker/*.exe
