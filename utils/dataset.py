@@ -117,42 +117,41 @@ def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
     run(["chmod", "+x", checker_file])
 
     # optic flow
-    print("Calculating optic flow...")
+    print()
     # frame files
     content_img_list = glob.glob(join(frame_folder, '*.{}'.format(img_format)))
     content_img_list.sort(key=lambda x: int(splitext(basename(x))[0]))
     forward_file_name = join(flow_folder, "forward_{}_{}.flo")
     backward_file_name = join(flow_folder, "backward_{}_{}.flo")
     reliable_file_name = join(flow_folder, "reliable_{}_{}.pgm")
-    for i in tqdm(range(len(content_img_list) - 1)):
+    pbar = tqdm(range(len(content_img_list) - 1))
+    pbar.set_description_str("Optic flow")
+    for i in pbar:
         j = i + 1
+        name_i, name_j = i + 1, j + 1
         # forward optic flow
-        if not isfile(forward_file_name.format(i, j)):
-            p = Popen([deep_match_file, content_img_list[i], content_img_list[j]],
-                       stdout=PIPE)
+        if not isfile(forward_file_name.format(name_i, name_j)):
+            p = Popen([deep_match_file, content_img_list[i], content_img_list[j]], stdout=PIPE)
             p = Popen([deep_flow_file, content_img_list[i], content_img_list[j],
-                        forward_file_name.format(i, j), '-match'],
-                       stdin=p.stdout)
+                       forward_file_name.format(name_i, name_j), '-match'], stdin=p.stdout)
             p.communicate()
 
         # backward optic flow
-        if not isfile(backward_file_name.format(j, i)):
-            p = Popen([deep_match_file, content_img_list[j], content_img_list[i]],
-                       stdout=PIPE)
+        if not isfile(backward_file_name.format(name_j, name_i)):
+            p = Popen([deep_match_file, content_img_list[j], content_img_list[i]], stdout=PIPE)
             p = Popen([deep_flow_file, content_img_list[j], content_img_list[i],
-                        backward_file_name.format(j, i), '-match'],
-                       stdin=p.stdout)
+                       backward_file_name.format(name_j, name_i), '-match'], stdin=p.stdout)
             p.communicate()
 
         # backward-forward check
-        if not isfile(reliable_file_name.format(j, i)):
-            run([checker_file, backward_file_name.format(j, i), forward_file_name.format(i, j),
-                 reliable_file_name.format(j, i)])
+        if not isfile(reliable_file_name.format(name_j, name_i)):
+            run([checker_file, backward_file_name.format(name_j, name_i), forward_file_name.format(name_i, name_j),
+                 reliable_file_name.format(name_j, name_i)])
 
         # forward-backward check
-        if not isfile(reliable_file_name.format(i, j)):
-            run([checker_file, forward_file_name.format(i, j), backward_file_name.format(j, i),
-                 reliable_file_name.format(i, j)])
+        if not isfile(reliable_file_name.format(name_i, name_j)):
+            run([checker_file, forward_file_name.format(name_i, name_j), backward_file_name.format(name_j, name_i),
+                 reliable_file_name.format(name_i, name_j)])
 
 
 def frames_to_video(frame_folder, video_path, img_format=DatasetParam.img_fmt):
