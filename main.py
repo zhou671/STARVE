@@ -15,6 +15,13 @@ import glob
 
 
 def preparation():
+    """
+    Preparations before training begins.
+    Including creating directories, convert a video into frames,
+    calculate optic flows, etc.
+    :return:
+        None
+    """
     if not isdir(TrainParam.output_dir):
         makedirs(TrainParam.output_dir)
     if not isdir(TrainParam.iter_img_dir):
@@ -27,6 +34,8 @@ def preparation():
         video_to_frames(DatasetParam.video_path, TrainParam.video_frames_dir)
         if TrainParam.use_optic_flow:
             make_optic_flow(TrainParam.video_frames_dir, TrainParam.video_optic_flow_dir)
+
+    return
 
 
 def train():
@@ -74,6 +83,16 @@ def train():
 
 
 def train_step(model, generated_image, optimizer, content_target, style_target):
+    """
+    Each training step.
+    :param model: VGG
+    :param generated_image: the image that needs to update
+    :param optimizer: optimizer
+    :param content_target: intermediate layer outputs of the content image
+    :param style_target: intermediate layer outputs of the style image
+    :return:
+        None
+    """
     with tf.GradientTape() as tape:
         outputs = model(generated_image)
         loss = style_content_loss(outputs,
@@ -85,6 +104,8 @@ def train_step(model, generated_image, optimizer, content_target, style_target):
     optimizer.apply_gradients([(grad, generated_image)])
     generated_image.assign(tf.clip_by_value(generated_image, clip_value_min=0, clip_value_max=255))
 
+    return
+
 
 def post_process():
     if DatasetParam.use_video:
@@ -92,6 +113,8 @@ def post_process():
         frames_to_video(TrainParam.stylized_img_dir,
                         join(TrainParam.output_dir, 'stylized_{}'
                              .format(basename(DatasetParam.video_path))))
+
+    return
 
 
 if __name__ == '__main__':

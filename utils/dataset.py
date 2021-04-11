@@ -99,6 +99,15 @@ def video_to_frames(src_video_path, save_folder, img_format=DatasetParam.img_fmt
 
 
 def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
+    """
+    Calculate forward and backward optic flow based on
+    opticFlow/makeOptFLow.sh and run-deepflow.sh
+    :param frame_folder: the folder of video frames
+    :param flow_folder: the folder to save optic flow results
+    :param img_format: image format, default='jpg'
+    :return:
+        None
+    """
     if not isdir(flow_folder):
         makedirs(flow_folder)
 
@@ -117,7 +126,7 @@ def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
     run(["chmod", "+x", checker_file])
 
     # optic flow
-    print()
+
     # frame files
     content_img_list = glob.glob(join(frame_folder, '*.{}'.format(img_format)))
     content_img_list.sort(key=lambda x: int(splitext(basename(x))[0]))
@@ -152,6 +161,8 @@ def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
         if not isfile(reliable_file_name.format(name_i, name_j)):
             run([checker_file, forward_file_name.format(name_i, name_j), backward_file_name.format(name_j, name_i),
                  reliable_file_name.format(name_i, name_j)])
+
+    return
 
 
 def frames_to_video(frame_folder, video_path, img_format=DatasetParam.img_fmt):
