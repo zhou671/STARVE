@@ -1,5 +1,6 @@
 from models.model import STARVE
-from utils.dataset import load_img, tensor_to_image, video_to_frames, frames_to_video
+from utils.dataset import load_img, tensor_to_image, \
+    video_to_frames, frames_to_video, make_optic_flow
 from utils.optimizers import get_optimizer
 from utils.losses import style_content_loss, tv_loss
 from hyperparams.train_param import TrainParam
@@ -24,6 +25,7 @@ def preparation():
     if DatasetParam.use_video:
         # convert video to frames
         video_to_frames(DatasetParam.video_path, TrainParam.video_frames_dir)
+        make_optic_flow(TrainParam.video_frames_dir, TrainParam.video_optic_flow_dir)
 
 
 def train():

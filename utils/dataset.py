@@ -7,7 +7,7 @@ import moviepy.editor as mpy
 from moviepy.video.fx.crop import crop
 from moviepy.video.fx.resize import resize
 from tqdm import tqdm
-from os import makedirs
+from os import makedirs, system, chdir
 from os.path import dirname, join, isdir, basename, splitext
 import glob
 
@@ -97,6 +97,12 @@ def video_to_frames(src_video_path, save_folder, img_format=DatasetParam.img_fmt
     return
 
 
+def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
+    chdir("./opticFlow")
+    system("./makeOptFlow ../{}/frame_%d.{} ../{}".format(frame_folder, img_format, flow_folder))
+    chdir("../")
+
+
 def frames_to_video(frame_folder, video_path, img_format=DatasetParam.img_fmt):
     """
     Convert frames to a video.
@@ -115,9 +121,6 @@ def frames_to_video(frame_folder, video_path, img_format=DatasetParam.img_fmt):
     clips.write_videofile(video_path, fps=DatasetParam.video_fps)
 
     return
-
-
-# TODO: load image folder
 
 
 if __name__ == '__main__':
