@@ -98,8 +98,14 @@ def video_to_frames(src_video_path, save_folder, img_format=DatasetParam.img_fmt
 
 
 def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
+    if not isdir(flow_folder):
+        makedirs(flow_folder)
     chdir("./opticFlow")
-    system("./makeOptFlow ../{}/frame_%d.{} ../{}".format(frame_folder, img_format, flow_folder))
+    system("chmod +x ./makeOptFlow.sh")
+    system("chmod +x ./run-deepflow.sh")
+    system("chmod +x ./deepflow2-static")
+    system("chmod +x ./deepmatching-static")
+    system("bash ./makeOptFlow ../{}/%d.{} ../{}".format(frame_folder, img_format, flow_folder))
     chdir("../")
 
 

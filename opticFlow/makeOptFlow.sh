@@ -14,6 +14,7 @@ if [ ! -f ./consistencyChecker/consistencyChecker ]; then
   fi
   cd consistencyChecker/ || exit
   make
+  chmod +x ./consistencyChecker
   cd ..
 fi
 
