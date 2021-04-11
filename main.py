@@ -25,7 +25,8 @@ def preparation():
     if DatasetParam.use_video:
         # convert video to frames
         video_to_frames(DatasetParam.video_path, TrainParam.video_frames_dir)
-        make_optic_flow(TrainParam.video_frames_dir, TrainParam.video_optic_flow_dir)
+        if TrainParam.use_optic_flow:
+            make_optic_flow(TrainParam.video_frames_dir, TrainParam.video_optic_flow_dir)
 
 
 def train():
