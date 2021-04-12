@@ -1,5 +1,7 @@
 # STARVE: Style TrAnsfeR for VidEos
 
+<a href="https://colab.research.google.com/github/zhou671/STRAVE/blob/master/style-transfer-for-videos-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+
 This is the final project for class 
 [CSCI 1430: Introduction to Computer Vision](https://browncsci1430.github.io/webpage/).
 
