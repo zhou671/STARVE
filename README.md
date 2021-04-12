@@ -17,3 +17,9 @@ written in Lua and C++.
 We also refer to in this 
 [tutorial](https://www.tensorflow.org/tutorials/generative/style_transfer)
 for basic functions.
+
+## Optic Flow
+
+If calculate optic flow with 2 CPU cores, it takes 35s per frame on average.
+ 
+`Optic flow: 100% 120/120 [1:09:26<00:00, 34.72s/it]`
