@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import cv2
 import moviepy.editor as mpy
 from moviepy.video.fx.crop import crop
-from moviepy.video.fx.resize import resize
 from tqdm import tqdm
 from os import makedirs, chdir
 from os.path import dirname, join, isdir, isfile, basename, splitext
