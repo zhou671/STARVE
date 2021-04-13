@@ -3,6 +3,7 @@ from hyperparams.dataset_param import DatasetParam
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+import cv2
 import moviepy.editor as mpy
 from moviepy.video.fx.crop import crop
 from moviepy.video.fx.resize import resize
@@ -10,7 +11,7 @@ from tqdm import tqdm
 from os import makedirs, chdir
 from os.path import dirname, join, isdir, isfile, basename, splitext
 import glob
-from subprocess import run, Popen, PIPE, STDOUT
+from subprocess import run, Popen, PIPE
 
 
 def load_img(path_to_img, do_preprocess=True):
@@ -89,13 +90,13 @@ def video_to_frames(src_video_path, save_folder, img_format=DatasetParam.img_fmt
         None
     """
     video = mpy.VideoFileClip(src_video_path)
-    video = resize(video, width=DatasetParam.img_w, height=DatasetParam.img_h)
     if not isdir(save_folder):
         makedirs(save_folder)
     pbar = tqdm(enumerate(video.iter_frames(fps=DatasetParam.video_fps, dtype="uint8")))
     pbar.set_description_str("Convert video to frames")
     for i, frame in pbar:
-        plt.imsave(join(save_folder, "{}.{}".format(i + 1, img_format)), frame)
+        plt.imsave(join(save_folder, "{}.{}".format(i + 1, img_format)),
+                   cv2.resize(frame, dsize=(DatasetParam.img_w, DatasetParam.img_h), interpolation=cv2.INTER_LINEAR))
 
     return
 
