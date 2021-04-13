@@ -16,5 +16,5 @@ class TrainParam:
     # whether to calculate optic flow for better effect.
     # This may take a lot of time on CPU
     use_optic_flow = True
-
+    use_deep_matching_gpu = True  # whether to use the GPU version of DeepMatching
     video_optic_flow_dir = 'output/optic_flow'  # folder to save optic flow

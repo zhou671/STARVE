@@ -1,4 +1,5 @@
 from hyperparams.dataset_param import DatasetParam
+from hyperparams.train_param import TrainParam
 
 import tensorflow as tf
 import numpy as np
@@ -135,6 +136,16 @@ def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
     forward_file_name = join(flow_folder, "forward_{}_{}.flo")
     backward_file_name = join(flow_folder, "backward_{}_{}.flo")
     reliable_file_name = join(flow_folder, "reliable_{}_{}.pgm")
+
+    # useful when `TrainParam.use_deep_matching_gpu` is True
+    forward_text_name = join(flow_folder, "forward_{}_{}.txt")
+    backward_text_name = join(flow_folder, "backward_{}_{}.txt")
+    if TrainParam.use_deep_matching_gpu:
+        dm_gpu = "opticFlow/web_gpudm_1.0_compiled/deep_matching_gpu_folder.py"  # DeepMatching GPU python script
+        run(["python2", dm_gpu,
+             '--frame-folder', frame_folder, '--output-folder', flow_folder,
+             '-GPU', '--use_sparse', '--ngh_rad', '256'])
+
     pbar = tqdm(range(len(content_img_list) - 1))
     pbar.set_description_str("Optic flow")
     for i in pbar:
@@ -142,14 +153,20 @@ def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
         name_i, name_j = i + 1, j + 1
         # forward optic flow
         if not isfile(forward_file_name.format(name_i, name_j)):
-            p = Popen([deep_match_file, content_img_list[i], content_img_list[j]], stdout=PIPE)
+            if TrainParam.use_deep_matching_gpu:
+                p = Popen(["cat", forward_text_name.format(name_i, name_j)], stdout=PIPE)
+            else:
+                p = Popen([deep_match_file, content_img_list[i], content_img_list[j]], stdout=PIPE)
             p = Popen([deep_flow_file, content_img_list[i], content_img_list[j],
                        forward_file_name.format(name_i, name_j), '-match'], stdin=p.stdout)
             p.communicate()
 
         # backward optic flow
         if not isfile(backward_file_name.format(name_j, name_i)):
-            p = Popen([deep_match_file, content_img_list[j], content_img_list[i]], stdout=PIPE)
+            if TrainParam.use_deep_matching_gpu:
+                p = Popen(["cat", backward_text_name.format(name_j, name_i)], stdout=PIPE)
+            else:
+                p = Popen([deep_match_file, content_img_list[j], content_img_list[i]], stdout=PIPE)
             p = Popen([deep_flow_file, content_img_list[j], content_img_list[i],
                        backward_file_name.format(name_j, name_i), '-match'], stdin=p.stdout)
             p.communicate()

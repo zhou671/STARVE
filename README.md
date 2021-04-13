@@ -25,3 +25,11 @@ for basic functions.
 If calculate optic flow with 2 CPU cores, it takes 35s per frame on average.
  
 `Optic flow: 100% 120/120 [1:09:26<00:00, 34.72s/it]`
+
+When using the GPU version of DeepMatching, it takes 6s per frame on average.
+There's a 6x speed up!
+
+```
+DeepMatching: 100% 120/120 [00:18<00:00, 6.68it/s]
+Optic flow: 100% 120/120 [12:14<00:00, 6.12s/it]
+```
