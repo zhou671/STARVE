@@ -62,7 +62,7 @@ def train():
 
         optimizer = get_optimizer()
         content_target = model(tf.constant(load_img(content_img_path)))['content']
-        generated_image = tf.Variable(load_img(content_img_path, do_preprocess=False))
+        generated_image = tf.Variable(load_img(content_img_path, do_preprocess=True))
 
         pbar = tqdm(range(TrainParam.n_step))
         pbar.set_description_str('[{}/{} {}]'.format(n_img + 1,
@@ -102,7 +102,7 @@ def train_step(model, generated_image, optimizer, content_target, style_target):
 
     grad = tape.gradient(loss, generated_image)
     optimizer.apply_gradients([(grad, generated_image)])
-    generated_image.assign(tf.clip_by_value(generated_image, clip_value_min=0, clip_value_max=255))
+    generated_image.assign(tf.clip_by_value(generated_image, clip_value_min=-150, clip_value_max=150))
 
     return
 

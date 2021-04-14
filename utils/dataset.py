@@ -46,7 +46,7 @@ def preprocess(img):
     Preprocess.
     :param img: image tensor
     :return:
-        Preprocessed image
+        Preprocessed image, BGR, [0, 255] - ImageNet mean
     """
     return tf.keras.applications.vgg19.preprocess_input(img)
 
@@ -58,10 +58,14 @@ def tensor_to_image(tensor):
     :return:
         Numpy array.
     """
-    tensor = tensor.numpy().astype(np.uint8)
+    tensor = tensor.numpy()
     if np.ndim(tensor) > 3:
         assert tensor.shape[0] == 1
         tensor = tensor[0]
+    mean = np.array([[[103.939, 116.779, 123.68]]], dtype=np.float32)
+    tensor += mean
+    tensor = np.clip(tensor, 0, 255)
+    tensor = tensor.astype(np.uint8)
 
     return tensor
 
