@@ -14,15 +14,16 @@ import glob
 from subprocess import run, Popen, PIPE
 
 
-def load_img(path_to_img, do_preprocess=True):
+def load_img(path_to_img, do_preprocess=True, bgr=True):
     """
     Load a single image.
     :param path_to_img: image path
     :param do_preprocess: subtract ImageNet mean
+    :param bgr: whether to convert channel sequence to BGR
     :return:
-        img: image of 4 dimensions, range (0, 255)
+        img: image of 4 dimensions (1, h, w, c), range (0, 255) when `do_preprocess` is False
     """
-    img = tf.io.read_file(path_to_img)
+    img = tf.io.read_file(path_to_img)  # RGB
     img = tf.image.decode_image(img, channels=3)
     img = tf.image.convert_image_dtype(img, tf.float32)
     img = tf.image.resize(img, [DatasetParam.img_h, DatasetParam.img_w])
@@ -30,8 +31,12 @@ def load_img(path_to_img, do_preprocess=True):
     img *= 255
 
     # preprocess
-    if do_preprocess:
-        img = preprocess(img)
+    if do_preprocess:  # RGB->BGR, subtract ImageNet mean [103.939, 116.779, 123.68] (BGR)
+        img = preprocess(img)  # BGR
+        if not bgr:
+            img = img[..., ::-1]  # RGB
+    elif bgr:
+        img = img[..., ::-1]  # BGR
 
     return img
 
@@ -226,9 +231,10 @@ def read_optic_flow(path):
 
 
 if __name__ == '__main__':
-    flow_data = read_optic_flow(r'../output/optic_flow/forward_1_2.flo')
-    print(flow_data.shape)
-    print(flow_data)
+    # flow_data = read_optic_flow(r'../output/optic_flow/forward_1_2.flo')
+    # print(flow_data.shape)
+    # print(flow_data)
     # video_to_frames(r'../demo/short_video.mp4', r'../output/video_frames')
     # frames_to_video(r'../output/video_frames', r'../output/test.mp4')
+    load_img(r'..\demo\mrbean.png')
     pass

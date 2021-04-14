@@ -7,7 +7,7 @@ from hyperparams.train_param import TrainParam
 from hyperparams.dataset_param import DatasetParam
 
 import tensorflow as tf
-import matplotlib.pyplot as plt
+import cv2
 from tqdm import tqdm
 from os import makedirs
 from os.path import join, isdir, basename, splitext
@@ -72,12 +72,12 @@ def train():
             tf_train_step(model, generated_image, optimizer, content_target, style_target)
 
             if (step + 1) % TrainParam.draw_step == 0:
-                plt.imsave(join(TrainParam.iter_img_dir, "{}.{}"
-                                .format(step + 1, DatasetParam.img_fmt)),
-                           tensor_to_image(generated_image))
+                cv2.imwrite(join(TrainParam.iter_img_dir, "{}.{}"
+                                 .format(step + 1, DatasetParam.img_fmt)),
+                            tensor_to_image(generated_image))
         else:
-            plt.imsave(join(TrainParam.stylized_img_dir, basename(content_img_path)),
-                       tensor_to_image(generated_image))
+            cv2.imwrite(join(TrainParam.stylized_img_dir, basename(content_img_path)),
+                        tensor_to_image(generated_image))
 
     return
 
