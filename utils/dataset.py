@@ -204,7 +204,30 @@ def frames_to_video(frame_folder, video_path, img_format=DatasetParam.img_fmt):
     return
 
 
+def read_optic_flow(path):
+    """
+    Read an optic flow file.
+    https://stackovernet.xyz/cn/q/11106036
+    https://github.com/youngjung/flow-python/blob/master/flowio.py
+    :param path: path to .flo file
+    :return:
+        data: (height, width, 2), u = data[:, :, 0], v = data[:, :, 1]
+    """
+    with open(path, 'rb') as f:
+        np.fromfile(f, np.int32, count=1)  # tag
+        w = np.fromfile(f, np.int32, count=1).item()  # width
+        h = np.fromfile(f, np.int32, count=1).item()  # height
+
+        data = np.fromfile(f, np.float32)  # vector
+        data = np.reshape(data, (h, w, 2))  # convert to x,y - flow
+
+    return data
+
+
 if __name__ == '__main__':
+    flow_data = read_optic_flow(r'../output/optic_flow/forward_1_2.flo')
+    print(flow_data.shape)
+    print(flow_data)
     # video_to_frames(r'../demo/short_video.mp4', r'../output/video_frames')
     # frames_to_video(r'../output/video_frames', r'../output/test.mp4')
     pass

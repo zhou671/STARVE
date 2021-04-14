@@ -1,4 +1,7 @@
+from utils.dataset import read_optic_flow
+
 import moviepy.editor as mpy
+import flow_vis
 import cv2
 
 
@@ -124,10 +127,36 @@ def compare_videos_stack(src_video_path, style_img_path, stylized_video_path, sa
     return final
 
 
+def vis_optic_flow(flow_input, bgr=False, save_path=""):
+    """
+    Visualize optic flow.
+    https://github.com/tomrunia/OpticalFlow_Visualization
+    :param flow_input: either the path to .flo file, or an (h, w, 2) array.
+    :param bgr: whether to generate BGR image
+    :param save_path: path to save the output image
+    :return:
+        flow_img: Visualization image of optic flow.
+    """
+    if isinstance(flow_input, str):
+        flow_input = read_optic_flow(flow_input)
+
+    flow_img = flow_vis.flow_to_color(flow_input, convert_to_bgr=bgr)
+
+    if save_path:
+        if bgr:
+            cv2.imwrite(save_path, flow_img)
+        else:
+            cv2.imwrite(save_path, cv2.cvtColor(flow_img, cv2.COLOR_RGB2BGR))
+
+    return flow_img
+
+
 if __name__ == '__main__':
     the_source_video = r"../demo/short_video.mp4"
     the_style_image = r"../demo/mrbean.png"
     the_output_video = r"../output/stylized_short_video tv10iters.mp4"
     the_save_path = r"../output/transition.mp4"
 
-    compare_videos_stack(the_source_video, the_style_image, the_output_video, the_save_path)
+    # compare_videos_stack(the_source_video, the_style_image, the_output_video, the_save_path)
+    vis_optic_flow(r'../output/optic_flow/forward_1_2.flo', save_path=r'../output/optic_flow.jpg')
+    pass
