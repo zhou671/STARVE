@@ -214,7 +214,8 @@ def read_optic_flow(path):
         data: (height, width, 2), u = data[:, :, 0], v = data[:, :, 1]
     """
     with open(path, 'rb') as f:
-        np.fromfile(f, np.int32, count=1)  # tag
+        t = np.fromfile(f, np.float32, count=1).item()  # tag
+        assert t == 202021.25, "{}: wrong tag (possibly due to big-endian machine?)".format(path)
         w = np.fromfile(f, np.int32, count=1).item()  # width
         h = np.fromfile(f, np.int32, count=1).item()  # height
 
