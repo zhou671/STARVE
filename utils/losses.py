@@ -5,8 +5,9 @@ import tensorflow as tf
 
 def gram_matrix(input_tensor):
     """
-    :param input_tensor:
+    :param input_tensor: [b, h, w, c]
     :return:
+        Gram matrix.
     """
     result = tf.linalg.einsum('bijc,bijd->bcd', input_tensor, input_tensor)
     input_shape = tf.shape(input_tensor)
@@ -18,10 +19,11 @@ def gram_matrix(input_tensor):
 def style_content_loss(outputs, style_targets, content_targets):
     """
     Loss = content_weight * content_loss + style_weight * style_loss
-    :param outputs:
-    :param style_targets:
-    :param content_targets:
+    :param outputs: model outputs
+    :param style_targets: style loss targets
+    :param content_targets: content loss target
     :return:
+        Weighted sum of style and content loss.
     """
     style_outputs = outputs['style']
     content_outputs = outputs['content']
@@ -38,18 +40,22 @@ def style_content_loss(outputs, style_targets, content_targets):
     return loss
 
 
-def temporal_loss(generated_image, optical_flow, per_pxl_weight):
+def temporal_loss(generated_image, warped_images, per_pxl_weight):
     """
     see equation (7) for how this loss is defined
-    :param generated_image: WxHxC image, x in equation
-    :param optical_flow: WxHxC optical flow, omega in equation
-    :param per_pxl_weight: WxHxC per_pxl_weight, c in equation
-    :return: shape() tensor for loss
+    :param generated_image: 1XWxHx3 image, x in equation
+    :param warped_images: nXWxHx3 warped images.
+           omega(x) in equation
+    :param per_pxl_weight: 1XWxHx1 per_pxl_weight, c in equation
+    :return:
+        loss: weighted temporal loss
     """
-    loss = generated_image - optical_flow
+    loss = generated_image - warped_images
     loss = tf.math.multiply(loss, loss)
     loss = tf.math.multiply(per_pxl_weight, loss)
-    return tf.reduce_mean(loss)
+    loss = LossParam.temporal_weight * tf.reduce_mean(loss)
+
+    return loss
 
 
 def tv_loss(generated_image):
@@ -57,7 +63,7 @@ def tv_loss(generated_image):
     Total variation loss.
     :param generated_image: generated image
     :return:
-        tv loss
+        loss: Total variation loss.
     """
     loss = LossParam.tv_weight * tf.image.total_variation(generated_image)
 
