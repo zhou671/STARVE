@@ -12,3 +12,8 @@ class DatasetParam:
 
     img_fmt = 'jpg'  # frame image format
     video_fps = 24  # select `video_fps` frames per second
+
+    # method to calculate optic flow
+    # 'dm_df2': DeepMatching + DeepFlow2
+    # 'df2': DeepFlow2 only
+    optic_flow_method = 'dm_df2'

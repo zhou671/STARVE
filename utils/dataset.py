@@ -1,7 +1,9 @@
 from hyperparams.dataset_param import DatasetParam
 from hyperparams.train_param import TrainParam
+from hyperparams.loss_param import LossParam
 
 import tensorflow as tf
+from tensorflow_addons.image import dense_image_warp
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -123,7 +125,7 @@ def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
     if not isdir(flow_folder):
         makedirs(flow_folder)
 
-    # make consistency checker
+    # compile consistency checker
     if not isfile("./opticFlow/consistencyChecker/consistencyChecker"):
         chdir("./opticFlow/consistencyChecker")
         run(["make"])
@@ -142,53 +144,82 @@ def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
     # frame files
     content_img_list = glob.glob(join(frame_folder, '*.{}'.format(img_format)))
     content_img_list.sort(key=lambda x: int(splitext(basename(x))[0]))
-    forward_file_name = join(flow_folder, "forward_{}_{}.flo")
-    backward_file_name = join(flow_folder, "backward_{}_{}.flo")
+    forward_flow_name = join(flow_folder, "forward_{}_{}.flo")
+    backward_flow_name = join(flow_folder, "backward_{}_{}.flo")
     reliable_file_name = join(flow_folder, "reliable_{}_{}.pgm")
 
     # useful when `TrainParam.use_deep_matching_gpu` is True
-    forward_text_name = join(flow_folder, "forward_{}_{}.txt")
-    backward_text_name = join(flow_folder, "backward_{}_{}.txt")
-    if TrainParam.use_deep_matching_gpu:
+    if DatasetParam.optic_flow_method == 'dm_df2' and TrainParam.use_deep_matching_gpu:
         dm_gpu = "opticFlow/web_gpudm_1.0_compiled/deep_matching_gpu_folder.py"  # DeepMatching GPU python script
         run(["python2", dm_gpu,
              '--frame-folder', frame_folder, '--output-folder', flow_folder,
+             '--intervals', *[str(x) for x in LossParam.J],
              '-GPU', '--use_sparse', '--ngh_rad', '256'])
 
-    pbar = tqdm(range(len(content_img_list) - 1))
-    pbar.set_description_str("Optic flow")
-    for i in pbar:
-        j = i + 1
-        name_i, name_j = i + 1, j + 1
-        # forward optic flow
-        if not isfile(forward_file_name.format(name_i, name_j)):
-            if TrainParam.use_deep_matching_gpu:
-                p = Popen(["cat", forward_text_name.format(name_i, name_j)], stdout=PIPE)
-            else:
-                p = Popen([deep_match_file, content_img_list[i], content_img_list[j]], stdout=PIPE)
-            p = Popen([deep_flow_file, content_img_list[i], content_img_list[j],
-                       forward_file_name.format(name_i, name_j), '-match'], stdin=p.stdout)
-            p.communicate()
+    # generate optic flow and calculate consistency
+    for interval in LossParam.J:
+        pbar = tqdm(range(len(content_img_list) - interval))
+        pbar.set_description_str("Optic flow interval={}".format(interval))
+        for i in pbar:
+            j = i + interval
+            name_i, name_j = i + 1, j + 1
+            pbar.set_postfix_str("{} and {}".format(basename(content_img_list[i]),
+                                                    basename(content_img_list[j])))
+            # forward optic flow
+            if not isfile(forward_flow_name.format(name_i, name_j)):
+                make_single_optic_flow(content_img_list[i], content_img_list[j],
+                                       forward_flow_name.format(name_i, name_j))
 
-        # backward optic flow
-        if not isfile(backward_file_name.format(name_j, name_i)):
-            if TrainParam.use_deep_matching_gpu:
-                p = Popen(["cat", backward_text_name.format(name_j, name_i)], stdout=PIPE)
-            else:
-                p = Popen([deep_match_file, content_img_list[j], content_img_list[i]], stdout=PIPE)
-            p = Popen([deep_flow_file, content_img_list[j], content_img_list[i],
-                       backward_file_name.format(name_j, name_i), '-match'], stdin=p.stdout)
-            p.communicate()
+            # backward optic flow
+            if not isfile(backward_flow_name.format(name_j, name_i)):
+                make_single_optic_flow(content_img_list[j], content_img_list[i],
+                                       backward_flow_name.format(name_j, name_i))
 
-        # backward-forward check
-        if not isfile(reliable_file_name.format(name_j, name_i)):
-            run([checker_file, backward_file_name.format(name_j, name_i), forward_file_name.format(name_i, name_j),
-                 reliable_file_name.format(name_j, name_i)])
+            # backward-forward consistency
+            if not isfile(reliable_file_name.format(name_j, name_i)):
+                run([checker_file, backward_flow_name.format(name_j, name_i), forward_flow_name.format(name_i, name_j),
+                     reliable_file_name.format(name_j, name_i)])
 
-        # forward-backward check
-        if not isfile(reliable_file_name.format(name_i, name_j)):
-            run([checker_file, forward_file_name.format(name_i, name_j), backward_file_name.format(name_j, name_i),
-                 reliable_file_name.format(name_i, name_j)])
+            # forward-backward consistency
+            if not isfile(reliable_file_name.format(name_i, name_j)):
+                run([checker_file, forward_flow_name.format(name_i, name_j), backward_flow_name.format(name_j, name_i),
+                     reliable_file_name.format(name_i, name_j)])
+
+    return
+
+
+def make_single_optic_flow(img1_path, img2_path, flow_path):
+    """
+    Generate a single optic flow file based on `DatasetParam.optic_flow_method`.
+    Basename of `img1_path` is 'i.jpg'.
+    Basename of `img1_path` is 'j.jpg'.
+    If i < j, then `flow_path` is 'forward_i_j.flo'.
+    If i > j, then `flow_path` is 'backward_i_j.flo'.
+    :param img1_path: path to the first image
+    :param img2_path: path to the second image
+    :param flow_path: path to save the optic flow file
+    :return:
+        None
+    """
+    deep_match_file = "./opticFlow/deepmatching-static"
+    deep_flow_file = "./opticFlow/deepflow2-static"
+
+    if DatasetParam.optic_flow_method == 'dm_df2':
+        if TrainParam.use_deep_matching_gpu:
+            # If the `flow_path` is forward_i_j.flo,
+            # the matching results are saved in forward_i_j.txt
+            p = Popen(["cat", flow_path.replace('.flo', '.txt')], stdout=PIPE)
+        else:
+            p = Popen([deep_match_file, img1_path, img2_path], stdout=PIPE)
+        p = Popen([deep_flow_file, img1_path, img2_path, flow_path, '-match'], stdin=p.stdout)
+        p.communicate()
+
+    elif DatasetParam.optic_flow_method == 'df2':
+        run([deep_flow_file, img1_path, img2_path, flow_path], stdout=PIPE)
+
+    else:
+        raise ValueError("Unknown method to generate optic flow: {}"
+                         .format(DatasetParam.optic_flow_method))
 
     return
 
