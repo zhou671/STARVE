@@ -493,6 +493,8 @@ def parse_args():
       help="Folder that contains video frames.") 
   parser.add_argument("-of","--output-folder", type=str, default="",
       help="Folder to save matching results.") 
+  parser.add_argument("-j","--intervals", nargs='+', type=int, default=[1],
+      help="Folder to save matching results.") 
   parser.add_argument("-out","--output", type=argparse.FileType('w'), default=sys.stdout, 
       help="Output the matching to a text file") 
   
@@ -538,19 +540,22 @@ if __name__=='__main__':
   if not os.path.isdir(args.output_folder):
     os.makedirs(args.output_folder)
 
-  pbar = trange(len(img_list) - 1)
-  pbar.set_description_str("DeepMatching")
-  for i in pbar:
-    img0 = array(Image.open(img_list[i]).convert('RGB'))
-    img1 = array(Image.open(img_list[i + 1]).convert('RGB'))
-    img0, img1 = helper.preprocess_images(img0, img1, args)
+  for interval in args.intervals:
+    pbar = trange(len(img_list) - interval)
+    pbar.set_description_str("DeepMatching interval={}".format(interval))
+    for i in pbar:
+      j = i + interval
+      pbar.set_postfix_str("{} and {}".format(os.path.basename(img_list[i]), os.path.basename(img_list[j])))
+      img0 = array(Image.open(img_list[i]).convert('RGB'))
+      img1 = array(Image.open(img_list[j]).convert('RGB'))
+      img0, img1 = helper.preprocess_images(img0, img1, args)
 
-    if not os.path.isfile(forward_file_name.format(i + 1, i + 2)):
-      corres = match_folder_images( (img0, img1), params, net=net, GPU=0, viz=viz)[0]
-      with open(forward_file_name.format(i + 1, i + 2), 'w') as f:
-        helper.output_file(corres, f)
+      if not os.path.isfile(forward_file_name.format(i + 1, j + 1)):
+        corres = match_folder_images( (img0, img1), params, net=net, GPU=0, viz=viz)[0]
+        with open(forward_file_name.format(i + 1, j + 1), 'w') as f:
+          helper.output_file(corres, f)
 
-    if not os.path.isfile(backward_file_name.format(i + 2, i + 1)):
-      corres = match_folder_images( (img1, img0), params, net=net, GPU=0, viz=viz)[0]
-      with open(backward_file_name.format(i + 2, i + 1), 'w') as f:
-        helper.output_file(corres, f)
+      if not os.path.isfile(backward_file_name.format(j + 1, i + 1)):
+        corres = match_folder_images( (img1, img0), params, net=net, GPU=0, viz=viz)[0]
+        with open(backward_file_name.format(j + 1, i + 1), 'w') as f:
+          helper.output_file(corres, f)
