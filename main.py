@@ -62,7 +62,7 @@ def train():
 
         optimizer = get_optimizer()
         content_target = model(tf.constant(load_img(content_img_path)))['content']
-        generated_image = init_generated_image(splitext(basename(content_img_path))[0],
+        generated_image = init_generated_image(int(splitext(basename(content_img_path))[0]),
                                                is_first_frame=n_img == 0)
 
         pbar = tqdm(range(TrainParam.n_step))

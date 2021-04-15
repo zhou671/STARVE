@@ -106,8 +106,8 @@ def video_to_frames(src_video_path, save_folder, img_format=DatasetParam.img_fmt
     pbar.set_description_str("Convert video to frames")
     for i, frame in pbar:
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        cv2.imsave(join(save_folder, "{}.{}".format(i + 1, img_format)),
-                   cv2.resize(frame, dsize=(DatasetParam.img_w, DatasetParam.img_h), interpolation=cv2.INTER_LINEAR))
+        cv2.imwrite(join(save_folder, "{}.{}".format(i + 1, img_format)),
+                    cv2.resize(frame, dsize=(DatasetParam.img_w, DatasetParam.img_h), interpolation=cv2.INTER_LINEAR))
 
     return
 
@@ -275,8 +275,7 @@ def init_generated_image(frame_idx, is_first_frame=False):
     """
 
     if DatasetParam.init_generated_image_method == 'image' \
-            or is_first_frame \
-            or not TrainParam.use_optic_flow:
+            or (is_first_frame and DatasetParam.init_generated_image_method == 'image_flow_warp'):
         content_img_path = join(TrainParam.video_frames_dir,
                                 '{}.{}'.format(frame_idx, DatasetParam.img_fmt))
         generated_image = load_img(content_img_path)
@@ -287,6 +286,9 @@ def init_generated_image(frame_idx, is_first_frame=False):
         # optic flow: The backward flow from current frame to the previous frame.
         # fix error: pip install gast==0.3.3
         # https://github.com/tensorflow/tensorflow/issues/44146#issuecomment-712798276
+        assert not TrainParam.use_optic_flow, \
+            "You are not using optic flow. You set TrainParam.use_optic_flow={}"\
+            .format(TrainParam.use_optic_flow)
         stylized_img_path = join(TrainParam.stylized_img_dir,
                                  '{}.{}'.format(frame_idx - 1, DatasetParam.img_fmt))
         img = load_img(stylized_img_path)
