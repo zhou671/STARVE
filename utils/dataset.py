@@ -265,6 +265,19 @@ def read_optic_flow(path):
     return data
 
 
+def read_consistency(path):
+    """
+    Read a consistency file.
+    :param path: path to .pgm file
+    :return:
+        data: (height, width), range [0, 1]
+    """
+    data = cv2.imread(path, -1)
+    data = data.astype(np.float32) / 255.
+
+    return data
+
+
 def init_generated_image(frame_idx, is_first_frame=False):
     """
     Initialize the first stylized image.
@@ -317,6 +330,11 @@ def init_generated_image(frame_idx, is_first_frame=False):
 if __name__ == '__main__':
     # import os
     # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    # data = read_consistency(r'../output/optic_flow/reliable_2_3.pgm')
+    # cv2.imshow('', data)
+    # cv2.waitKey(0)
+    # print(data.shape, data.max(), data.min())
+
     # img = load_img(r'../output/video_frames/1.jpg', False, True)
     # flow = tf.convert_to_tensor(read_optic_flow(r'../output/optic_flow/backward_2_1.flo')[None, :], dtype=tf.float32)
     # o = dense_image_warp(img, -flow)
