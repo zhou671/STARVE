@@ -1,6 +1,6 @@
 from models.model import STARVE
 from utils.dataset import load_img, tensor_to_image, \
-    video_to_frames, frames_to_video, make_optic_flow
+    video_to_frames, frames_to_video, make_optic_flow, init_generated_image
 from utils.optimizers import get_optimizer
 from utils.losses import style_content_loss, tv_loss
 from hyperparams.train_param import TrainParam
@@ -62,7 +62,8 @@ def train():
 
         optimizer = get_optimizer()
         content_target = model(tf.constant(load_img(content_img_path)))['content']
-        generated_image = tf.Variable(load_img(content_img_path, do_preprocess=True))
+        generated_image = init_generated_image(splitext(basename(content_img_path))[0],
+                                               is_first_frame=n_img == 0)
 
         pbar = tqdm(range(TrainParam.n_step))
         pbar.set_description_str('[{}/{} {}]'.format(n_img + 1,

@@ -17,3 +17,9 @@ class DatasetParam:
     # 'dm_df2': DeepMatching + DeepFlow2
     # 'df2': DeepFlow2 only
     optic_flow_method = 'dm_df2'
+
+    # method to initialize the stylized image
+    # 'image': use the current video frame image
+    # 'image_flow_warp': warp the previous stylized image with optic flow
+    # 'random': normal distribution
+    init_generated_image_method = 'image'
