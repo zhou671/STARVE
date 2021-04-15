@@ -265,15 +265,21 @@ def read_optic_flow(path):
     return data
 
 
-def read_consistency(path):
+def read_consistency(path, as_image=False):
     """
     Read a consistency file.
     :param path: path to .pgm file
+    :param as_image: whether to return an image
     :return:
-        data: (height, width), range [0, 1]
+        data: When `as_image` is True, (height, width), range [0, 255]
+              When `as_image` is False, (1, height, width, 1), range [0, 1]
     """
     data = cv2.imread(path, -1)
-    data = data.astype(np.float32) / 255.
+    if as_image:
+        return data
+
+    data = tf.cast(data, tf.float32) / 255.
+    data = data[tf.newaxis, ..., tf.newaxis]
 
     return data
 
