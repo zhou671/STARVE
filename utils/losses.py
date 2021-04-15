@@ -38,6 +38,20 @@ def style_content_loss(outputs, style_targets, content_targets):
     return loss
 
 
+def temporal_loss(generated_image, optical_flow, per_pxl_weight):
+    """
+    see equation (7) for how this loss is defined
+    :param generated_image: WxHxC image, x in equation
+    :param optical_flow: WxHxC optical flow, omega in equation
+    :param per_pxl_weight: WxHxC per_pxl_weight, c in equation
+    :return: shape() tensor for loss
+    """
+    loss = generated_image - optical_flow
+    loss = tf.math.multiply(loss, loss)
+    loss = tf.math.multiply(per_pxl_weight, loss)
+    return tf.reduce_mean(loss)
+
+
 def tv_loss(generated_image):
     """
     Total variation loss.
