@@ -1,6 +1,62 @@
 from hyperparams.loss_param import LossParam
-
+from dataset import read_optic_flow
+import cv2
 import tensorflow as tf
+
+def get_optical_flow(cur_frame, prev_frame):
+    """
+    optical flow
+    :param cur_frame: WxHxC image
+    :param prev_frame: WxHxC image
+    :return: WxHxC tensor for optical flow
+    """
+    # cur_ind, prev_ind # 改成input index
+    w_caret = read_optic_flow("../output/optic_flow/backward_{}_{}.flo".format(cur_ind, prev_ind))
+    w = read_optic_flow("../output/optic_flow/forward_{}_{}.flo".format(cur_ind, prev_ind))
+    # Use CV2
+    # prev = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
+    # cur = cv2.cvtColor(cur_frame, cv2.COLOR_BGR2GRAY)
+    # inst = cv2.optflow.createOptFlow_DeepFlow()
+    # # Optical flow in forward direction
+    # w = inst.calc(prev, cur, None)
+    # # Optical flow in backward direction
+    # w_caret = inst.calc(cur, prev, None)
+    # # cv2.optflow.writeOpticalFlow("dp.flo", w)
+    return w, w_caret
+
+
+def get_per_pxl_weight(cur_frame, prev_frame):
+    """
+    0 in disoccluded regions (as detected by forward-backward consistency) and at motion boundaries
+    and 1 everywhere else
+    see equation (5) and (6) for how disoccluded regions and motino boundaries are defined
+    see equation (7) for how the weights are defined
+    see equation (8) for how the input parameters are defined
+    :param cur_frame: WxHxC image
+    :param prev_frame: WxHxC image
+    :return: WxHxC tensor for C per_pixel weight
+    """
+    w, w_caret = get_optical_flow(cur_frame, prev_frame)
+    w_tilde = w*(prev_frame + w_caret*(cur_frame))
+
+
+def init_img(img_sqe, frame_idx, direction):
+    """
+    see equation (11) and (12)
+    :param img_sqe: list of images, each img should be WxHxC
+    :param frame_idx: the idx of the frame to be count loss for
+    :param direction: passing direction, either 1 or -1 
+    :return: a WxHxC image
+    """
+    n = len(img_sqe)
+    prev_frame_idx = frame_idx + direction
+    if prev_frame_idx < 0 or prev_frame_idx > n:
+        return tf.identity(img_sqe[frame_idx])
+    else:
+        per_pxl_weight = get_per_pxl_weight(frame_idx, prev_frame_idx)
+        optical_flow = get_optical_flow(img_sqe[frame_idx], img_sqe[prev_frame_idx])
+        per_pxl_weight_hat = 1 - per_pxl_weight
+        return LossParam.blend_factor * tf.math.multiply(per_pxl_weight, optical_flow) + tf.math.multiply((LossParam.blend_factor * per_pxl_weight_hat  + (1 - LossParam.blend_factor)), img_sqe[frame_idx])
 
 
 def gram_matrix(input_tensor):
