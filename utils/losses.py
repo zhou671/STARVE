@@ -19,9 +19,9 @@ def gram_matrix(input_tensor):
 def style_content_loss(outputs, style_targets, content_targets):
     """
     Loss = content_weight * content_loss + style_weight * style_loss
-    :param outputs: model outputs
-    :param style_targets: style loss targets
-    :param content_targets: content loss target
+    :param outputs: a dictionary of style and content output
+    :param style_targets: extracted style features of the style image
+    :param content_targets: extracted content features of the style image
     :return:
         Weighted sum of style and content loss.
     """
@@ -44,13 +44,13 @@ def temporal_loss(generated_image, warped_images, per_pxl_weight):
     """
     see equation (7) for how this loss is defined
     :param generated_image: 1XWxHx3 image, x in equation
-    :param warped_images: nXWxHx3 warped images.
-           omega(x) in equation
-    :param per_pxl_weight: 1XWxHx1 per_pxl_weight, c in equation
+    :param warped_images: nXWxHx3 warped images, where n is length of J
+                          omega(x) in equation
+    :param per_pxl_weight: nXWxHx1 per_pxl_weight, c in equation
     :return:
         loss: weighted temporal loss
     """
-    loss = generated_image - warped_images
+    loss = tf.math.subtract(generated_image, warped_images)
     loss = tf.math.multiply(loss, loss)
     loss = tf.math.multiply(per_pxl_weight, loss)
     loss = LossParam.temporal_weight * tf.reduce_mean(loss)
