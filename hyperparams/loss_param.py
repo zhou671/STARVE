@@ -2,8 +2,8 @@ class LossParam:
     """
     Hyper-parameters for utils/losses.py
     """
-    content_weight = 1 # alpha
-    style_weight = 20 # beta
+    content_weight = 1e-1 # alpha
+    style_weight = 5e-6 # beta
     tv_weight = 1e-1  # total variation loss weight
     temporal_weight = 200  #lambda
     blend_factor = 0.5 # delta
