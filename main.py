@@ -77,11 +77,8 @@ def train():
                                                      len(content_img_list),
                                                      basename(content_img_path)))
         for step in pbar:
-            if DatasetParam.use_video and TrainParam.use_optic_flow:
-                tf_train_step(model, generated_image, optimizer, content_target, style_target,
-                              warped_images=warped_images, consistency_weights=consistency_weights)
-            else:
-                tf_train_step(model, generated_image, optimizer, content_target, style_target)
+            tf_train_step(model, generated_image, optimizer, content_target, style_target,
+                          warped_images=warped_images, consistency_weights=consistency_weights)
 
             if (step + 1) % TrainParam.draw_step == 0:
                 cv2.imwrite(join(TrainParam.iter_img_dir, "{}.{}"

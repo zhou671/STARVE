@@ -2,7 +2,7 @@ class TrainParam:
     """
     Hyper-parameters for main.py
     """
-    n_step = 200
+    n_step = 50
     draw_step = 100
 
     # paths
