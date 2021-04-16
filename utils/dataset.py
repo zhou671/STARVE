@@ -359,7 +359,7 @@ def make_warped_images_for_temporal_loss(frame_idx):
                      if frame_idx - j > 0]
     if not warped_images:
         return None
-
+    warped_images = tf.convert_to_tensor(warped_images, dtype=tf.float32)
     warped_images = tf.constant(warped_images, dtype=tf.float32)
 
     return warped_images
