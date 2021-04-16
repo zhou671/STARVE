@@ -119,7 +119,7 @@ def temporal_loss(generated_image, warped_images, per_pxl_weight):
 
     return loss
 
-def shortterm_loss(img_sqe, frame_idx, outputs, generated_image, style_targets, content_targets, warped_images):
+def short_or_long_term_loss(img_sqe, frame_idx, outputs, generated_image, style_targets, content_targets, warped_images, j=1):
     '''
     see equation (8)
     :param img_sqe: list of images, each img should be WxHxC
@@ -127,9 +127,11 @@ def shortterm_loss(img_sqe, frame_idx, outputs, generated_image, style_targets, 
     :param outputs: a dictionary of style and content output
     :param style_targets: extracted style features of the style image
     :param content_targets: extracted content features of the style image
+    :param j: number of frames apart to get optical flow
+
     :return: combined style, content loss and temporal loss
     '''
-    prev_frame_idx = frame_idx - 1
+    prev_frame_idx = frame_idx - j
     if prev_frame_idx < 0:
         return style_content_loss(outputs, style_targets, content_targets)
     per_pxl_weight = get_per_pxl_weight(frame_idx, prev_frame_idx)
