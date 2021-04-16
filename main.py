@@ -1,8 +1,9 @@
 from models.model import STARVE
 from utils.dataset import load_img, tensor_to_image, \
-    video_to_frames, frames_to_video, make_optic_flow, init_generated_image
+    video_to_frames, frames_to_video, make_optic_flow, init_generated_image, \
+    make_warped_images_for_temporal_loss, make_consistency_for_temporal_loss
 from utils.optimizers import get_optimizer
-from utils.losses import style_content_loss, tv_loss
+from utils.losses import style_content_loss, tv_loss, temporal_loss
 from hyperparams.train_param import TrainParam
 from hyperparams.dataset_param import DatasetParam
 
@@ -61,16 +62,26 @@ def train():
         tf_train_step = tf.function(train_step)
 
         optimizer = get_optimizer()
+        frame_idx = int(splitext(basename(content_img_path))[0])
         content_target = model(tf.constant(load_img(content_img_path)))['content']
-        generated_image = init_generated_image(int(splitext(basename(content_img_path))[0]),
-                                               is_first_frame=n_img == 0)
+        generated_image = init_generated_image(frame_idx)
+
+        # component for temporal loss
+        warped_images, consistency_weights = None, None
+        if DatasetParam.use_video and TrainParam.use_optic_flow:
+            warped_images = make_warped_images_for_temporal_loss(frame_idx)
+            consistency_weights = make_consistency_for_temporal_loss(frame_idx)
 
         pbar = tqdm(range(TrainParam.n_step))
         pbar.set_description_str('[{}/{} {}]'.format(n_img + 1,
                                                      len(content_img_list),
                                                      basename(content_img_path)))
         for step in pbar:
-            tf_train_step(model, generated_image, optimizer, content_target, style_target)
+            if DatasetParam.use_video and TrainParam.use_optic_flow:
+                tf_train_step(model, generated_image, optimizer, content_target, style_target,
+                              warped_images=warped_images, consistency_weights=consistency_weights)
+            else:
+                tf_train_step(model, generated_image, optimizer, content_target, style_target)
 
             if (step + 1) % TrainParam.draw_step == 0:
                 cv2.imwrite(join(TrainParam.iter_img_dir, "{}.{}"
@@ -83,7 +94,7 @@ def train():
     return
 
 
-def train_step(model, generated_image, optimizer, content_target, style_target):
+def train_step(model, generated_image, optimizer, content_target, style_target, **kwargs):
     """
     Each training step.
     :param model: VGG
@@ -91,6 +102,9 @@ def train_step(model, generated_image, optimizer, content_target, style_target):
     :param optimizer: optimizer
     :param content_target: intermediate layer outputs of the content image
     :param style_target: intermediate layer outputs of the style image
+    :param kwargs:
+        If use temporal loss, i.e, (DatasetParam.use_video and TrainParam.use_optic_flow) is True,
+        then kwargs['warped_images'], kwargs['consistency_weights'] will be used.
     :return:
         None
     """
@@ -100,6 +114,9 @@ def train_step(model, generated_image, optimizer, content_target, style_target):
                                   style_targets=style_target,
                                   content_targets=content_target)
         loss += tv_loss(generated_image)
+        if DatasetParam.use_video and TrainParam.use_optic_flow:
+            if kwargs['warped_images'] is not None:
+                loss += temporal_loss(generated_image, kwargs['warped_images'], kwargs['consistency_weights'])
 
     grad = tape.gradient(loss, generated_image)
     optimizer.apply_gradients([(grad, generated_image)])

@@ -5,5 +5,6 @@ class LossParam:
     content_weight = 7e-1  # alpha
     style_weight = 5e-6  # beta
     tv_weight = 5e-2  # total variation loss weight
+
     temporal_weight = 200  # lambda
     J = [1]  # long-term consistency chosen frame

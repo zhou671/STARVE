@@ -14,6 +14,7 @@ class TrainParam:
     # optic flow
 
     # whether to calculate optic flow for better effect.
+    # This means to use the temporal loss.
     # This may take a lot of time on CPU
     use_optic_flow = True
     use_deep_matching_gpu = True  # whether to use the GPU version of DeepMatching

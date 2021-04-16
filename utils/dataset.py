@@ -284,17 +284,15 @@ def read_consistency(path, as_image=False):
     return data
 
 
-def init_generated_image(frame_idx, is_first_frame=False):
+def init_generated_image(frame_idx):
     """
     Initialize the first stylized image.
-    :param frame_idx: the index of content image
-    :param is_first_frame: whether this is the first frame
+    :param frame_idx: the index of content image, i.e., frame file name is `frame_idx`.jpg.
     :return:
         generated_image: Initialized stylized image.
     """
-
     if DatasetParam.init_generated_image_method == 'image' \
-            or (is_first_frame and DatasetParam.init_generated_image_method == 'image_flow_warp'):
+            or (frame_idx == 1 and DatasetParam.init_generated_image_method == 'image_flow_warp'):
         content_img_path = join(TrainParam.video_frames_dir,
                                 '{}.{}'.format(frame_idx, DatasetParam.img_fmt))
         generated_image = load_img(content_img_path)
@@ -308,15 +306,7 @@ def init_generated_image(frame_idx, is_first_frame=False):
         assert not TrainParam.use_optic_flow, \
             "You are not using optic flow. You set TrainParam.use_optic_flow={}"\
             .format(TrainParam.use_optic_flow)
-        stylized_img_path = join(TrainParam.stylized_img_dir,
-                                 '{}.{}'.format(frame_idx - 1, DatasetParam.img_fmt))
-        img = load_img(stylized_img_path)
-        optic_flow_path = join(TrainParam.video_optic_flow_dir,
-                               "backward_{}_{}.flo".format(frame_idx, frame_idx - 1))
-        flow = read_optic_flow(optic_flow_path)
-        flow = tf.convert_to_tensor(flow, dtype=tf.float32)
-        flow = flow[tf.newaxis, :]
-        generated_image = dense_image_warp(img, -flow)
+        generated_image = warp_single_image(frame_idx, 1)
 
     elif DatasetParam.init_generated_image_method == 'random':
         generated_image = tf.random.truncated_normal(
@@ -333,9 +323,81 @@ def init_generated_image(frame_idx, is_first_frame=False):
     return generated_image
 
 
+def warp_single_image(frame_idx, step):
+    """
+    Warp a single stylized image based on optic flow.
+    The stylized image is `frame_idx`.jpg.
+    The optic flow is backward_`frame_idx`_`frame_idx - step`.flo
+    :param frame_idx: the index of content image, i.e., frame file name is `frame_idx`.jpg.
+    :param step: frame index difference
+    :return:
+        warped_image: Of shape (1, h, w, 3), subtracted by ImageNet mean.
+    """
+    stylized_img_path = join(TrainParam.stylized_img_dir,
+                             '{}.{}'.format(frame_idx - step, DatasetParam.img_fmt))
+    optic_flow_path = join(TrainParam.video_optic_flow_dir,
+                           "backward_{}_{}.flo".format(frame_idx, frame_idx - step))
+    img = load_img(stylized_img_path)
+    flow = read_optic_flow(optic_flow_path)
+    flow = tf.convert_to_tensor(flow, dtype=tf.float32)
+    flow = flow[tf.newaxis, :]
+    warped_image = dense_image_warp(img, -flow)
+
+    return warped_image
+
+
+def make_warped_images_for_temporal_loss(frame_idx):
+    """
+    Get warped images for short/long term temporal loss.
+    :param frame_idx: the index of content image, i.e., frame file name is `frame_idx`.jpg.
+    :return:
+        warped_images: Of shape (b, h, w, 3), 0 <= b <= len(J).
+                       Subtracted by ImageNet mean.
+    """
+    warped_images = [tf.squeeze(warp_single_image(frame_idx, j), [0])
+                     for j in LossParam.J
+                     if frame_idx - j > 0]
+    if not warped_images:
+        return None
+
+    warped_images = tf.constant(warped_images, dtype=tf.float32)
+
+    return warped_images
+
+
+def make_consistency_for_temporal_loss(frame_idx):
+    """
+    Get warped images for short/long term temporal loss.
+    :param frame_idx: the index of content image, i.e., frame file name is `frame_idx`.jpg.
+    :return:
+        consistency_weights: Of shape (b, h, w, 1), 0 <= b <= len(J).
+                             Of range [0, 1].
+    """
+    consistency_weights = []
+    for j in LossParam.J:
+        if frame_idx - j > 0:
+            consistency_path = join(TrainParam.video_optic_flow_dir,
+                                    "reliable_{}_{}.pgm".format(frame_idx, frame_idx - j))
+            consistency = read_consistency(consistency_path)
+            consistency_weights.append(tf.squeeze(consistency, [0]))
+    if not consistency_weights:
+        return None
+    consistency_weights = tf.convert_to_tensor(consistency_weights, dtype=tf.float32)
+
+    if consistency_weights.shape[0] > 1:
+        consistency_weights -= tf.cumsum(consistency_weights, axis=0, exclusive=True)
+        consistency_weights = tf.maximum(consistency_weights, 0)
+    consistency_weights = tf.constant(consistency_weights)
+
+    return consistency_weights
+
+
 if __name__ == '__main__':
-    # import os
-    # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    import os
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+    os.chdir('..')
+
+    print(make_consistency_for_temporal_loss(2))
     # data = read_consistency(r'../output/optic_flow/reliable_2_3.pgm')
     # cv2.imshow('', data)
     # cv2.waitKey(0)
