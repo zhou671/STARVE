@@ -19,6 +19,8 @@ class DatasetParam:
     optic_flow_method = 'dm_df2'
 
     # method to initialize the stylized image
+    # useful when not using multi-pass,
+    # or in the first pass when using multi-pass
     # 'image': use the current video frame image
     # 'image_flow_warp': warp the previous stylized image with optic flow
     # 'random': normal distribution

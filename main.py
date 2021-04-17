@@ -54,39 +54,42 @@ def train():
     else:
         content_img_list = [DatasetParam.content_img_path]
 
-    for n_img, content_img_path in enumerate(content_img_list):
-        # Call tf.function each time, or there will be
-        # ValueError: tf.function-decorated function tried to create variables on non-first call
-        # because of issues with lazy execution.
-        # https://www.machinelearningplus.com/deep-learning/how-use-tf-function-to-speed-up-python-code-tensorflow/
-        tf_train_step = tf.function(train_step)
+    for n_pass in range(1, TrainParam.n_passes + 1):
+        for n_img, content_img_path in enumerate(content_img_list):
+            # Call tf.function each time, or there will be
+            # ValueError: tf.function-decorated function tried to create variables on non-first call
+            # because of issues with lazy execution.
+            # https://www.machinelearningplus.com/deep-learning/how-use-tf-function-to-speed-up-python-code-tensorflow/
+            tf_train_step = tf.function(train_step)
 
-        optimizer = get_optimizer()
-        frame_idx = int(splitext(basename(content_img_path))[0])
-        content_target = model(tf.constant(load_img(content_img_path)))['content']
-        generated_image = init_generated_image(frame_idx)
+            optimizer = get_optimizer()
+            frame_idx = int(splitext(basename(content_img_path))[0])
+            content_target = model(tf.constant(load_img(content_img_path)))['content']
+            generated_image = init_generated_image(frame_idx)
 
-        # component for temporal loss
-        warped_images, consistency_weights = None, None
-        if DatasetParam.use_video and TrainParam.use_optic_flow:
-            warped_images = make_warped_images_for_temporal_loss(frame_idx)
-            consistency_weights = make_consistency_for_temporal_loss(frame_idx)
+            # component for temporal loss
+            warped_images, consistency_weights = None, None
+            if DatasetParam.use_video and TrainParam.use_optic_flow:
+                warped_images = make_warped_images_for_temporal_loss(frame_idx)
+                consistency_weights = make_consistency_for_temporal_loss(frame_idx)
 
-        pbar = tqdm(range(TrainParam.n_step))
-        pbar.set_description_str('[{}/{} {}]'.format(n_img + 1,
-                                                     len(content_img_list),
-                                                     basename(content_img_path)))
-        for step in pbar:
-            tf_train_step(model, generated_image, optimizer, content_target, style_target,
-                          warped_images=warped_images, consistency_weights=consistency_weights)
+            pbar = tqdm(range(TrainParam.n_step))
+            pbar.set_description_str('[{}/{} {}]'.format(n_img + 1,
+                                                         len(content_img_list),
+                                                         basename(content_img_path)))
+            for step in pbar:
+                tf_train_step(model, generated_image, optimizer, content_target, style_target,
+                              warped_images=warped_images, consistency_weights=consistency_weights)
 
-            if (step + 1) % TrainParam.draw_step == 0:
-                cv2.imwrite(join(TrainParam.iter_img_dir, "{}.{}"
-                                 .format(step + 1, DatasetParam.img_fmt)),
-                            tensor_to_image(generated_image))
-        else:
-            cv2.imwrite(join(TrainParam.stylized_img_dir, basename(content_img_path)),
-                        tensor_to_image(generated_image))
+                if (step + 1) % TrainParam.draw_step == 0:
+                    # save intermediate result
+                    cv2.imwrite(join(TrainParam.iter_img_dir, "{}_p{}.{}"
+                                     .format(step + 1, n_pass + 1, DatasetParam.img_fmt)),
+                                tensor_to_image(generated_image))
+            else:
+                save_path = join(TrainParam.stylized_img_dir,
+                                 "{}_p{}.{}".format(frame_idx, n_pass, DatasetParam.img_fmt))
+                cv2.imwrite(save_path, tensor_to_image(generated_image))
 
     return
 

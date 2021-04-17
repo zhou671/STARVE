@@ -8,3 +8,6 @@ class LossParam:
 
     temporal_weight = 2e1  # lambda
     J = [1, 2, 5]  # long-term consistency chosen frame
+
+    use_temporal_pass = 2  # from which pass to use short-term temporal loss
+    blend_factor = 0.5  # delta

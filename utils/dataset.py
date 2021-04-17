@@ -265,7 +265,7 @@ def read_optic_flow(path):
     return data
 
 
-def read_consistency(path, as_image=False):
+def read_consistency(path="", as_image=False):
     """
     Read a consistency file.
     :param path: path to .pgm file
@@ -284,38 +284,72 @@ def read_consistency(path, as_image=False):
     return data
 
 
-def init_generated_image(frame_idx):
+def read_single_consistency(frame_idx, step=1, n_pass=1):
+    """
+    Read a consistency file. The path is deduced from arguments.
+    :param frame_idx: the index of content image, i.e., frame file name is `frame_idx`.jpg.
+    :param step: frame index difference
+    :param n_pass: number of pass
+    :return:
+        consistency: (1, height, width, 1), range [0, 1].
+    """
+    last_idx = frame_idx - step if n_pass % 2 == 1 else frame_idx + step
+    consistency_path = join(TrainParam.video_optic_flow_dir,
+                            "reliable_{}_{}.pgm".format(frame_idx, last_idx))
+
+    consistency = read_consistency(consistency_path)
+
+    return consistency
+
+
+def init_generated_image(frame_idx, n_pass=1, is_start=False):
     """
     Initialize the first stylized image.
     :param frame_idx: the index of content image, i.e., frame file name is `frame_idx`.jpg.
+    :param n_pass: number of pass
+    :param is_start: useful when using multi-pass
+                     True: the first frame in forward pass, or the last frame for the backward pass
+                     False: otherwise
     :return:
         generated_image: Initialized stylized image.
     """
-    if DatasetParam.init_generated_image_method == 'image' \
-            or (frame_idx == 1 and DatasetParam.init_generated_image_method == 'image_flow_warp'):
-        content_img_path = join(TrainParam.video_frames_dir,
-                                '{}.{}'.format(frame_idx, DatasetParam.img_fmt))
-        generated_image = load_img(content_img_path)
+    if TrainParam.n_passes == 1 or n_pass == 1:
+        if DatasetParam.init_generated_image_method == 'image' \
+                or (frame_idx == 1 and DatasetParam.init_generated_image_method == 'image_flow_warp'):
+            content_img_path = join(TrainParam.video_frames_dir,
+                                    '{}.{}'.format(frame_idx, DatasetParam.img_fmt))
+            generated_image = load_img(content_img_path)
 
-    elif DatasetParam.init_generated_image_method == 'image_flow_warp':
-        # https://www.tensorflow.org/addons/api_docs/python/tfa/image/dense_image_warp
-        # image: The stylized image of the previous frame.
-        # optic flow: The backward flow from current frame to the previous frame.
-        # fix error: pip install gast==0.3.3
-        # https://github.com/tensorflow/tensorflow/issues/44146#issuecomment-712798276
-        assert not TrainParam.use_optic_flow, \
-            "You are not using optic flow. You set TrainParam.use_optic_flow={}"\
-            .format(TrainParam.use_optic_flow)
-        generated_image = warp_single_image(frame_idx, 1)
+        elif DatasetParam.init_generated_image_method == 'image_flow_warp':
+            # https://www.tensorflow.org/addons/api_docs/python/tfa/image/dense_image_warp
+            # image: The stylized image of the previous frame.
+            # optic flow: The backward flow from current frame to the previous frame.
+            # fix error: pip install gast==0.3.3
+            # https://github.com/tensorflow/tensorflow/issues/44146#issuecomment-712798276
+            assert not TrainParam.use_optic_flow, \
+                "You are not using optic flow. You set TrainParam.use_optic_flow={}"\
+                .format(TrainParam.use_optic_flow)
+            generated_image = warp_single_image(frame_idx, 1)
 
-    elif DatasetParam.init_generated_image_method == 'random':
-        generated_image = tf.random.truncated_normal(
-            shape=[1, DatasetParam.img_h, DatasetParam.img_w, 3],
-            stddev=63.75)
+        elif DatasetParam.init_generated_image_method == 'random':
+            generated_image = tf.random.truncated_normal(
+                shape=[1, DatasetParam.img_h, DatasetParam.img_w, 3],
+                stddev=63.75)
+
+        else:
+            raise ValueError("Unknown method to initialize the first image: {}"
+                             .format(DatasetParam.init_generated_image_method))
 
     else:
-        raise ValueError("Unknown method to initialize the first image: {}"
-                         .format(DatasetParam.init_generated_image_method))
+        stylized_img_last_pass_path = join(TrainParam.stylized_img_dir,
+                                           "{}_p{}.{}".format(frame_idx, n_pass - 1, DatasetParam.img_fmt))
+        stylized_img_last_pass = load_img(stylized_img_last_pass_path)
+        if is_start:
+            generated_image = stylized_img_last_pass
+        else:
+            warped_image_this_pass = warp_single_image(frame_idx, 1, n_pass)
+            weight = read_single_consistency(frame_idx, 1, n_pass) * LossParam.blend_factor
+            generated_image = weight * warped_image_this_pass + (1 - weight) * stylized_img_last_pass
 
     generated_image = tf.cast(generated_image, tf.float32)
     generated_image = tf.Variable(generated_image)
@@ -323,20 +357,29 @@ def init_generated_image(frame_idx):
     return generated_image
 
 
-def warp_single_image(frame_idx, step):
+def warp_single_image(frame_idx, step=1, n_pass=1):
     """
     Warp a single stylized image based on optic flow.
     The stylized image is `frame_idx`.jpg.
     The optic flow is backward_`frame_idx`_`frame_idx - step`.flo
     :param frame_idx: the index of content image, i.e., frame file name is `frame_idx`.jpg.
     :param step: frame index difference
+    :param n_pass: number of pass
     :return:
         warped_image: Of shape (1, h, w, 3), subtracted by ImageNet mean.
     """
-    stylized_img_path = join(TrainParam.stylized_img_dir,
-                             '{}.{}'.format(frame_idx - step, DatasetParam.img_fmt))
-    optic_flow_path = join(TrainParam.video_optic_flow_dir,
-                           "backward_{}_{}.flo".format(frame_idx, frame_idx - step))
+    if n_pass % 2 == 1:  # forward pass
+        stylized_img_path = join(TrainParam.stylized_img_dir,
+                                 '{}_p{}.{}'.format(frame_idx - step, n_pass, DatasetParam.img_fmt))
+        optic_flow_path = join(TrainParam.video_optic_flow_dir,
+                               "backward_{}_{}.flo".format(frame_idx, frame_idx - step))
+
+    else:  # backward pass
+        stylized_img_path = join(TrainParam.stylized_img_dir,
+                                 '{}_p{}.{}'.format(frame_idx + step, n_pass, DatasetParam.img_fmt))
+        optic_flow_path = join(TrainParam.video_optic_flow_dir,
+                               "forward_{}_{}.flo".format(frame_idx, frame_idx + step))
+
     img = load_img(stylized_img_path)
     flow = read_optic_flow(optic_flow_path)
     flow = tf.convert_to_tensor(flow, dtype=tf.float32)
@@ -346,17 +389,27 @@ def warp_single_image(frame_idx, step):
     return warped_image
 
 
-def make_warped_images_for_temporal_loss(frame_idx):
+def make_warped_images_for_temporal_loss(frame_idx, n_pass=1, is_start=False):
     """
     Get warped images for short/long term temporal loss.
-    :param frame_idx: the index of content image, i.e., frame file name is `frame_idx`.jpg.
+    :param frame_idx: the index of content image, i.e., frame file name is `frame_idx`.jpg
+    :param n_pass: number of pass
+    :param is_start: useful when using multi-pass
+                     True: the first frame in forward pass, or the last frame for the backward pass
+                     False: otherwise
     :return:
         warped_images: Of shape (b, h, w, 3), 0 <= b <= len(J).
                        Subtracted by ImageNet mean.
     """
-    warped_images = [tf.squeeze(warp_single_image(frame_idx, j), [0])
-                     for j in LossParam.J
-                     if frame_idx - j > 0]
+    if TrainParam.n_passes == 1:  # no multi-pass
+        warped_images = [tf.squeeze(warp_single_image(frame_idx, j), [0])
+                         for j in LossParam.J
+                         if frame_idx - j > 0]
+    else:  # multi-pass
+        if LossParam.use_temporal_pass < n_pass or is_start:
+            return None
+        warped_images = warp_single_image(frame_idx, 1, n_pass)  # only use short-term loss
+
     if not warped_images:
         return None
     warped_images = tf.convert_to_tensor(warped_images, dtype=tf.float32)
@@ -365,21 +418,27 @@ def make_warped_images_for_temporal_loss(frame_idx):
     return warped_images
 
 
-def make_consistency_for_temporal_loss(frame_idx):
+def make_consistency_for_temporal_loss(frame_idx, n_pass=1, is_start=False):
     """
     Get warped images for short/long term temporal loss.
-    :param frame_idx: the index of content image, i.e., frame file name is `frame_idx`.jpg.
+    :param frame_idx: the index of content image, i.e., frame file name is `frame_idx`.jpg
+    :param n_pass: number of pass
+    :param is_start: useful when using multi-pass
+                     True: the first frame in forward pass, or the last frame for the backward pass
+                     False: otherwise
     :return:
         consistency_weights: Of shape (b, h, w, 1), 0 <= b <= len(J).
                              Of range [0, 1].
     """
-    consistency_weights = []
-    for j in LossParam.J:
-        if frame_idx - j > 0:
-            consistency_path = join(TrainParam.video_optic_flow_dir,
-                                    "reliable_{}_{}.pgm".format(frame_idx, frame_idx - j))
-            consistency = read_consistency(consistency_path)
-            consistency_weights.append(tf.squeeze(consistency, [0]))
+    if TrainParam.n_passes == 1:  # no multi-pass
+        consistency_weights = [tf.squeeze(read_single_consistency(frame_idx, j), [0])
+                               for j in LossParam.J
+                               if frame_idx - j > 0]
+    else:  # multi-pass
+        if LossParam.use_temporal_pass < n_pass or is_start:
+            return None
+        consistency_weights = read_single_consistency(frame_idx, 1, n_pass)  # only use short-term loss
+
     if not consistency_weights:
         return None
     consistency_weights = tf.convert_to_tensor(consistency_weights, dtype=tf.float32)

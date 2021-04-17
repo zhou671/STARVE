@@ -19,3 +19,6 @@ class TrainParam:
     use_optic_flow = True
     use_deep_matching_gpu = True  # whether to use the GPU version of DeepMatching
     video_optic_flow_dir = 'output/optic_flow'  # folder to save optic flow
+
+    # multi-pass
+    n_passes = 1  # number of passes, the first pass will not use blend factor
