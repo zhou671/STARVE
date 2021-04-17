@@ -74,9 +74,9 @@ def train():
                 consistency_weights = make_consistency_for_temporal_loss(frame_idx, n_pass, n_img == 0)
 
             pbar = tqdm(range(TrainParam.n_step))
-            pbar.set_description_str('[{}/{} {}]'.format(n_img + 1,
-                                                         len(content_img_list),
-                                                         basename(content_img_path)))
+            pbar.set_description_str('[pass {}/{} | frame {}/{} {}]'
+                                     .format(n_pass, TrainParam.n_passes,
+                                             n_img + 1, len(content_img_list), basename(content_img_path)))
             for step in pbar:
                 tf_train_step(model, generated_image, optimizer, content_target, style_target,
                               warped_images=warped_images, consistency_weights=consistency_weights)
