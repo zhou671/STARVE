@@ -148,16 +148,17 @@ def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
     backward_flow_name = join(flow_folder, "backward_{}_{}.flo")
     reliable_file_name = join(flow_folder, "reliable_{}_{}.pgm")
 
+    intervals = LossParam.J if TrainParam.n_passes == 1 else [1]
     # useful when `TrainParam.use_deep_matching_gpu` is True
     if DatasetParam.optic_flow_method == 'dm_df2' and TrainParam.use_deep_matching_gpu:
         dm_gpu = "opticFlow/web_gpudm_1.0_compiled/deep_matching_gpu_folder.py"  # DeepMatching GPU python script
         run(["python2", dm_gpu,
              '--frame-folder', frame_folder, '--output-folder', flow_folder,
-             '--intervals', *[str(x) for x in LossParam.J],
+             '--intervals', *[str(x) for x in intervals],
              '-GPU', '--use_sparse', '--ngh_rad', '256'])
 
     # generate optic flow and calculate consistency
-    for interval in LossParam.J if TrainParam.n_passes == 1 else [1]:
+    for interval in intervals:
         pbar = tqdm(range(len(content_img_list) - interval))
         pbar.set_description_str("Optic flow interval={}".format(interval))
         for i in pbar:
@@ -236,7 +237,7 @@ def frames_to_video(frame_folder, video_path, n_pass=TrainParam.n_passes, img_fo
     """
 
     file_list = glob.glob(join(frame_folder, '*_p{}.{}'.format(n_pass, img_format)))
-    file_list.sort(key=lambda x: int(splitext(basename(x))[0]))
+    file_list.sort(key=lambda x: int(splitext(basename(x))[0].split('_')[0]))
     duration = 1 / DatasetParam.video_fps
     clips = [mpy.ImageClip(x).set_duration(duration) for x in file_list]
     clips = mpy.concatenate_videoclips(clips, method="compose")
@@ -407,13 +408,14 @@ def make_warped_images_for_temporal_loss(frame_idx, n_pass=1, is_start=False):
         warped_images = [tf.squeeze(warp_single_image(frame_idx, j), [0])
                          for j in LossParam.J
                          if frame_idx - j > 0]
+        if not warped_images:
+            return None
+
     else:  # multi-pass
         if LossParam.use_temporal_pass < n_pass or is_start:
             return None
         warped_images = warp_single_image(frame_idx, 1, n_pass)  # only use short-term loss
 
-    if not warped_images:
-        return None
     warped_images = tf.convert_to_tensor(warped_images, dtype=tf.float32)
     warped_images = tf.constant(warped_images, dtype=tf.float32)
 
@@ -436,13 +438,14 @@ def make_consistency_for_temporal_loss(frame_idx, n_pass=1, is_start=False):
         consistency_weights = [tf.squeeze(read_single_consistency(frame_idx, j), [0])
                                for j in LossParam.J
                                if frame_idx - j > 0]
+        if not consistency_weights:
+            return None
+
     else:  # multi-pass
         if LossParam.use_temporal_pass < n_pass or is_start:
             return None
         consistency_weights = read_single_consistency(frame_idx, 1, n_pass)  # only use short-term loss
 
-    if not consistency_weights:
-        return None
     consistency_weights = tf.convert_to_tensor(consistency_weights, dtype=tf.float32)
 
     if consistency_weights.shape[0] > 1:
