@@ -224,17 +224,18 @@ def make_single_optic_flow(img1_path, img2_path, flow_path):
     return
 
 
-def frames_to_video(frame_folder, video_path, img_format=DatasetParam.img_fmt):
+def frames_to_video(frame_folder, video_path, n_pass=1, img_format=DatasetParam.img_fmt):
     """
-    Convert frames to a video.
+    Convert stylized frames to a video.
     :param frame_folder: the folder with frame images
     :param video_path: path to save the output video
+    :param n_pass: number of pass
     :param img_format: image format, default='jpg'
     :return:
         None
     """
 
-    file_list = glob.glob(join(frame_folder, '*.{}'.format(img_format)))
+    file_list = glob.glob(join(frame_folder, '*_p{}.{}'.format(n_pass, img_format)))
     file_list.sort(key=lambda x: int(splitext(basename(x))[0]))
     duration = 1 / DatasetParam.video_fps
     clips = [mpy.ImageClip(x).set_duration(duration) for x in file_list]
