@@ -65,13 +65,13 @@ def train():
             optimizer = get_optimizer()
             frame_idx = int(splitext(basename(content_img_path))[0])
             content_target = model(tf.constant(load_img(content_img_path)))['content']
-            generated_image = init_generated_image(frame_idx)
+            generated_image = init_generated_image(frame_idx, n_pass, n_img == 0)
 
             # component for temporal loss
             warped_images, consistency_weights = None, None
             if DatasetParam.use_video and TrainParam.use_optic_flow:
-                warped_images = make_warped_images_for_temporal_loss(frame_idx)
-                consistency_weights = make_consistency_for_temporal_loss(frame_idx)
+                warped_images = make_warped_images_for_temporal_loss(frame_idx, n_pass, n_img == 0)
+                consistency_weights = make_consistency_for_temporal_loss(frame_idx, n_pass, n_img == 0)
 
             pbar = tqdm(range(TrainParam.n_step))
             pbar.set_description_str('[{}/{} {}]'.format(n_img + 1,
@@ -90,6 +90,8 @@ def train():
                 save_path = join(TrainParam.stylized_img_dir,
                                  "{}_p{}.{}".format(frame_idx, n_pass, DatasetParam.img_fmt))
                 cv2.imwrite(save_path, tensor_to_image(generated_image))
+
+        content_img_list = content_img_list[::-1]  # reverse pass direction
 
     return
 
@@ -126,11 +128,15 @@ def train_step(model, generated_image, optimizer, content_target, style_target, 
 
 
 def post_process():
+    """
+    Convert the stylized frames of the final pass to a video.
+    :return:
+        None
+    """
     if DatasetParam.use_video:
         # convert frames to videos
         frames_to_video(TrainParam.stylized_img_dir,
-                        join(TrainParam.output_dir, 'stylized_{}'
-                             .format(basename(DatasetParam.video_path))))
+                        join(TrainParam.output_dir, 'stylized_{}'.format(basename(DatasetParam.video_path))))
 
     return
 

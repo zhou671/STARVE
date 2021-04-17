@@ -224,7 +224,7 @@ def make_single_optic_flow(img1_path, img2_path, flow_path):
     return
 
 
-def frames_to_video(frame_folder, video_path, n_pass=1, img_format=DatasetParam.img_fmt):
+def frames_to_video(frame_folder, video_path, n_pass=TrainParam.n_passes, img_format=DatasetParam.img_fmt):
     """
     Convert stylized frames to a video.
     :param frame_folder: the folder with frame images
