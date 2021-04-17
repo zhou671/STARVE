@@ -157,7 +157,7 @@ def make_optic_flow(frame_folder, flow_folder, img_format=DatasetParam.img_fmt):
              '-GPU', '--use_sparse', '--ngh_rad', '256'])
 
     # generate optic flow and calculate consistency
-    for interval in LossParam.J:
+    for interval in LossParam.J if TrainParam.n_passes == 1 else [1]:
         pbar = tqdm(range(len(content_img_list) - interval))
         pbar.set_description_str("Optic flow interval={}".format(interval))
         for i in pbar:
@@ -315,7 +315,8 @@ def init_generated_image(frame_idx, n_pass=1, is_start=False):
     """
     if TrainParam.n_passes == 1 or n_pass == 1:
         if DatasetParam.init_generated_image_method == 'image' \
-                or (frame_idx == 1 and DatasetParam.init_generated_image_method == 'image_flow_warp'):
+                or (frame_idx == 1 and DatasetParam.init_generated_image_method == 'image_flow_warp') \
+                or (TrainParam.n_passes == 1 and n_pass == 1):
             content_img_path = join(TrainParam.video_frames_dir,
                                     '{}.{}'.format(frame_idx, DatasetParam.img_fmt))
             generated_image = load_img(content_img_path)
