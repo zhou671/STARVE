@@ -1,7 +1,5 @@
 # STARVE: Style TrAnsfeR for VidEos
 
-<a href="https://colab.research.google.com/github/zhou671/STRAVE/blob/master/style-transfer-for-videos-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-
 This is the final project for class 
 [CSCI 1430: Introduction to Computer Vision](https://browncsci1430.github.io/webpage/).
 
@@ -19,6 +17,15 @@ written in Lua and C++.
 We also refer to in this 
 [tutorial](https://www.tensorflow.org/tutorials/generative/style_transfer)
 for basic functions.
+
+See this notebook tutorial for how to run the model.
+<a href="https://colab.research.google.com/github/zhou671/STRAVE/blob/master/run-style-transfer-for-videos-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+
+See this notebook tutorial for how to compile 
+[Caffe](https://caffe.berkeleyvision.org) and 
+[DeepMatching-GPU](https://thoth.inrialpes.fr/src/deepmatching/) (optional). 
+<a href="https://colab.research.google.com/github/zhou671/STRAVE/blob/master/compile-caffe-and-deepmatching-gpu-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+
 
 ## Optic Flow
 
