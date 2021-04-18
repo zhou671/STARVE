@@ -23,21 +23,26 @@ def style_content_loss(outputs, style_targets, content_targets):
     :param style_targets: extracted style features of the style image
     :param content_targets: extracted content features of the style image
     :return:
-        Weighted sum of style and content loss.
+        loss: Weighted sum of style and content loss.
+        loss_dict: Dict of loss values.
     """
     style_outputs = outputs['style']
     content_outputs = outputs['content']
 
-    style_loss = tf.add_n([tf.reduce_mean((style_outputs[name] - style_targets[name]) ** 2)
-                           for name in style_outputs.keys()])
-    style_loss *= LossParam.style_weight / len(style_outputs)
+    style_loss = tf.reduce_mean([tf.reduce_mean((style_outputs[name] - style_targets[name]) ** 2)
+                                 for name in style_outputs.keys()])
+    loss_dict = {'style': style_loss.numpy()}
+    style_loss *= LossParam.style_weight
+    loss_dict['style_w'] = loss_dict['style'] * LossParam.style_weight
 
-    content_loss = tf.add_n([tf.reduce_mean((content_outputs[name] - content_targets[name]) ** 2)
-                             for name in content_outputs.keys()])
-    content_loss *= LossParam.content_weight / len(content_outputs)
+    content_loss = tf.reduce_mean([tf.reduce_mean((content_outputs[name] - content_targets[name]) ** 2)
+                                   for name in content_outputs.keys()])
+    loss_dict['content'] = content_loss.numpy()
+    content_loss *= LossParam.content_weight
+    loss_dict['content_w'] = loss_dict['content'] * LossParam.content_weight
     loss = style_loss + content_loss
 
-    return loss
+    return loss, loss_dict
 
 
 def temporal_loss(generated_image, warped_images, per_pxl_weight):

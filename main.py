@@ -6,6 +6,7 @@ from utils.optimizers import get_optimizer
 from utils.losses import style_content_loss, tv_loss, temporal_loss
 from hyperparams.train_param import TrainParam
 from hyperparams.dataset_param import DatasetParam
+from hyperparams.loss_param import LossParam
 
 import tensorflow as tf
 import cv2
@@ -78,9 +79,10 @@ def train():
                                      .format(n_pass, TrainParam.n_passes,
                                              n_img + 1, len(content_img_list), basename(content_img_path)))
             for step in pbar:
-                tf_train_step(model, generated_image, optimizer, content_target, style_target,
-                              warped_images=warped_images, consistency_weights=consistency_weights)
-
+                loss_dict = tf_train_step(model, generated_image, optimizer, content_target, style_target,
+                                          warped_images=warped_images, consistency_weights=consistency_weights)
+                los_strs_list = ["{}: {:2f}".format(k, v) for k, v in loss_dict.items()]
+                pbar.set_postfix_str(' | '.join(los_strs_list))
                 if (step + 1) % TrainParam.draw_step == 0:
                     # save intermediate result
                     cv2.imwrite(join(TrainParam.iter_img_dir, "{}_p{}.{}"
@@ -108,23 +110,32 @@ def train_step(model, generated_image, optimizer, content_target, style_target, 
         If use temporal loss, i.e, (DatasetParam.use_video and TrainParam.use_optic_flow) is True,
         then kwargs['warped_images'], kwargs['consistency_weights'] will be used.
     :return:
-        None
+        loss_dict: Dict of loss values.
     """
+    loss_dict = {}
     with tf.GradientTape() as tape:
         outputs = model(generated_image)
-        loss = style_content_loss(outputs,
-                                  style_targets=style_target,
-                                  content_targets=content_target)
+        loss, loss_dict_sc = style_content_loss(outputs,
+                                                style_targets=style_target,
+                                                content_targets=content_target)
+        loss_dict.update(loss_dict_sc)
         loss += tv_loss(generated_image)
+        loss_dict['tv'] = 0
+        loss_dict['tv_w'] = loss.numpy() - loss_dict['style_w'] - loss_dict['content_w']
+        loss_dict['tv'] = loss_dict['tv_w'] / LossParam.tv_weight
         if DatasetParam.use_video and TrainParam.use_optic_flow:
             if kwargs['warped_images'] is not None:
                 loss += temporal_loss(generated_image, kwargs['warped_images'], kwargs['consistency_weights'])
-
+                loss_dict['temporal'] = 0
+                loss_dict['temporal_w'] = (loss.numpy() - loss_dict['style_w'] -
+                                           loss_dict['content_w'] - loss_dict['tv_w'])
+                loss_dict['temporal'] = loss_dict['temporal_w'] / LossParam.temporal_weight
+        loss_dict['loss_w'] = loss.numpy()
     grad = tape.gradient(loss, generated_image)
     optimizer.apply_gradients([(grad, generated_image)])
     generated_image.assign(tf.clip_by_value(generated_image, clip_value_min=-150, clip_value_max=150))
 
-    return
+    return loss_dict
 
 
 def post_process():
