@@ -13,7 +13,7 @@ But bash commands are rewritten as Python codes with the subprocess package.
 `deepflow2-static` is copied from [DeepFLow2](https://thoth.inrialpes.fr/src/deepflow/).
 
 `deepmatching-static`, `viz.py` are copied form [DeepMatching](https://thoth.inrialpes.fr/src/deepmatching/).
-The `print` functions in `viz.py` is modified to accommodate for Python3.x.
+The `print` functions in `viz.py` are modified to accommodate for Python3.x.
 
 `web_gpudm_1.0_source` is downloaded from [DeepMatching-GPU V1.0](https://thoth.inrialpes.fr/src/deepmatching/code/deepmatching_gpu_1.0.zip).
 `web_gpudm_1.0_compiled` contains the files compiled on Colab.
