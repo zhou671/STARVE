@@ -61,7 +61,10 @@ def train():
             # ValueError: tf.function-decorated function tried to create variables on non-first call
             # because of issues with lazy execution.
             # https://www.machinelearningplus.com/deep-learning/how-use-tf-function-to-speed-up-python-code-tensorflow/
-            tf_train_step = tf.function(train_step)
+            if LossParam.debug_loss:
+                tf_train_step = train_step
+            else:
+                tf_train_step = tf.function(train_step)
 
             optimizer = get_optimizer()
             frame_idx = int(splitext(basename(content_img_path))[0])
@@ -81,7 +84,7 @@ def train():
             for step in pbar:
                 loss_dict = tf_train_step(model, generated_image, optimizer, content_target, style_target,
                                           warped_images=warped_images, consistency_weights=consistency_weights)
-                los_strs_list = ["{}: {:2f}".format(k, v) for k, v in loss_dict.items()]
+                los_strs_list = ["{}: {:2f}".format(k, v.item()) for k, v in loss_dict.items()]
                 pbar.set_postfix_str(' | '.join(los_strs_list))
                 if (step + 1) % TrainParam.draw_step == 0:
                     # save intermediate result
@@ -118,19 +121,22 @@ def train_step(model, generated_image, optimizer, content_target, style_target, 
         loss, loss_dict_sc = style_content_loss(outputs,
                                                 style_targets=style_target,
                                                 content_targets=content_target)
-        loss_dict.update(loss_dict_sc)
         loss += tv_loss(generated_image)
-        loss_dict['tv'] = 0
-        loss_dict['tv_w'] = loss.numpy() - loss_dict['style_w'] - loss_dict['content_w']
-        loss_dict['tv'] = loss_dict['tv_w'] / LossParam.tv_weight
+        if LossParam.debug_loss:
+            loss_dict.update(loss_dict_sc)
+            loss_dict['tv'] = 0
+            loss_dict['tv_w'] = loss.numpy() - loss_dict['style_w'] - loss_dict['content_w']
+            loss_dict['tv'] = loss_dict['tv_w'] / LossParam.tv_weight
         if DatasetParam.use_video and TrainParam.use_optic_flow:
             if kwargs['warped_images'] is not None:
                 loss += temporal_loss(generated_image, kwargs['warped_images'], kwargs['consistency_weights'])
-                loss_dict['temporal'] = 0
-                loss_dict['temporal_w'] = (loss.numpy() - loss_dict['style_w'] -
-                                           loss_dict['content_w'] - loss_dict['tv_w'])
-                loss_dict['temporal'] = loss_dict['temporal_w'] / LossParam.temporal_weight
-        loss_dict['loss_w'] = loss.numpy()
+                if LossParam.debug_loss:
+                    loss_dict['temporal'] = 0
+                    loss_dict['temporal_w'] = (loss.numpy() - loss_dict['style_w'] -
+                                               loss_dict['content_w'] - loss_dict['tv_w'])
+                    loss_dict['temporal'] = loss_dict['temporal_w'] / LossParam.temporal_weight
+        if LossParam.debug_loss:
+            loss_dict['loss_w'] = loss.numpy()
     grad = tape.gradient(loss, generated_image)
     optimizer.apply_gradients([(grad, generated_image)])
     generated_image.assign(tf.clip_by_value(generated_image, clip_value_min=-150, clip_value_max=150))

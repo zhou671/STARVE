@@ -412,7 +412,7 @@ def make_warped_images_for_temporal_loss(frame_idx, n_pass=1, is_start=False):
             return None
 
     else:  # multi-pass
-        if LossParam.use_temporal_pass < n_pass or is_start:
+        if n_pass < LossParam.use_temporal_pass or is_start:
             return None
         warped_images = warp_single_image(frame_idx, 1, n_pass)  # only use short-term loss
 
@@ -442,7 +442,7 @@ def make_consistency_for_temporal_loss(frame_idx, n_pass=1, is_start=False):
             return None
 
     else:  # multi-pass
-        if LossParam.use_temporal_pass < n_pass or is_start:
+        if n_pass < LossParam.use_temporal_pass or is_start:
             return None
         consistency_weights = read_single_consistency(frame_idx, 1, n_pass)  # only use short-term loss
 
