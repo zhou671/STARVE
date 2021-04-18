@@ -12,4 +12,4 @@ class LossParam:
     use_temporal_pass = 2  # from which pass to use short-term temporal loss
     blend_factor = 0.5  # delta
 
-    debug_loss = True  # when False, will run 1.5~2x faster
+    print_loss = True  # when False, will run 1.5~2x faster

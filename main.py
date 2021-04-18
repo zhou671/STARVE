@@ -61,7 +61,7 @@ def train():
             # ValueError: tf.function-decorated function tried to create variables on non-first call
             # because of issues with lazy execution.
             # https://www.machinelearningplus.com/deep-learning/how-use-tf-function-to-speed-up-python-code-tensorflow/
-            if LossParam.debug_loss:
+            if LossParam.print_loss:
                 tf_train_step = train_step
             else:
                 tf_train_step = tf.function(train_step)
@@ -122,7 +122,7 @@ def train_step(model, generated_image, optimizer, content_target, style_target, 
                                                 style_targets=style_target,
                                                 content_targets=content_target)
         loss += tv_loss(generated_image)
-        if LossParam.debug_loss:
+        if LossParam.print_loss:
             loss_dict.update(loss_dict_sc)
             loss_dict['tv'] = 0
             loss_dict['tv_w'] = loss.numpy() - loss_dict['style_w'] - loss_dict['content_w']
@@ -130,12 +130,12 @@ def train_step(model, generated_image, optimizer, content_target, style_target, 
         if DatasetParam.use_video and TrainParam.use_optic_flow:
             if kwargs['warped_images'] is not None:
                 loss += temporal_loss(generated_image, kwargs['warped_images'], kwargs['consistency_weights'])
-                if LossParam.debug_loss:
+                if LossParam.print_loss:
                     loss_dict['temporal'] = 0
                     loss_dict['temporal_w'] = (loss.numpy() - loss_dict['style_w'] -
                                                loss_dict['content_w'] - loss_dict['tv_w'])
                     loss_dict['temporal'] = loss_dict['temporal_w'] / LossParam.temporal_weight
-        if LossParam.debug_loss:
+        if LossParam.print_loss:
             loss_dict['loss_w'] = loss.numpy()
     grad = tape.gradient(loss, generated_image)
     optimizer.apply_gradients([(grad, generated_image)])
