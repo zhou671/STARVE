@@ -14,8 +14,9 @@ class DatasetParam:
     video_fps = 24  # select `video_fps` frames per second
 
     # method to calculate optic flow
-    # 'dm_df2': DeepMatching + DeepFlow2
-    # 'df2': DeepFlow2 only
+    # 'dm_df2': DeepMatching + DeepFlow2, the best quality
+    # 'df2': DeepFlow2 only, 2~3s per frame
+    # 'std': Sparse to Dense, 10 fps
     optic_flow_method = 'dm_df2'
 
     # method to initialize the stylized image

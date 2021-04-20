@@ -218,6 +218,12 @@ def make_single_optic_flow(img1_path, img2_path, flow_path):
     elif DatasetParam.optic_flow_method == 'df2':
         run([deep_flow_file, img1_path, img2_path, flow_path], stdout=PIPE)
 
+    elif DatasetParam.optic_flow_method == 'std':
+        img1 = cv2.imread(img1_path, cv2.IMREAD_GRAYSCALE)
+        img2 = cv2.imread(img2_path, cv2.IMREAD_GRAYSCALE)
+        flow = cv2.optflow.calcOpticalFlowSparseToDense(img1, img2)
+        write_optic_flow(flow, flow_path)
+
     else:
         raise ValueError("Unknown method to generate optic flow: {}"
                          .format(DatasetParam.optic_flow_method))
@@ -265,6 +271,22 @@ def read_optic_flow(path):
         data = np.reshape(data, (h, w, 2))  # convert to x,y - flow
 
     return data
+
+
+def write_optic_flow(flow, flow_path):
+    """
+    https://github.com/sniklaus/pytorch-liteflownet/blob/master/run.py
+    :param flow: optic flow, (h, w, 2)
+    :param flow_path: path to save optic flow as an .flo file
+    :return:
+        None
+    """
+    with open(flow_path, 'wb') as f:
+        np.array([80, 73, 69, 72], np.uint8).tofile(f)
+        np.array([flow.shape[1], flow.shape[0]], np.int32).tofile(f)
+        flow.astype(np.float32).tofile(f)
+
+    return
 
 
 def read_consistency(path="", as_image=False):
@@ -461,7 +483,20 @@ if __name__ == '__main__':
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
     os.chdir('..')
 
-    print(make_consistency_for_temporal_loss(2))
+    # img1 = cv2.imread(r'output/video_frames/1.jpg', cv2.IMREAD_GRAYSCALE)
+    # img2 = cv2.imread(r'output/video_frames/2.jpg', cv2.IMREAD_GRAYSCALE)
+    # flow = cv2.optflow.calcOpticalFlowSparseToDense(img2, img1)
+    # write_optic_flow(flow, r'C:\Users\zichu\Downloads\backward_2_1.flo')
+    # print(type(flow))
+
+    # p1 = r'output/optic_flow/backward_2_1.flo'
+    # p2 = r'C:\Users\zichu\Downloads\backward_2_1.flo'
+    # f1 = read_optic_flow(p1)
+    # f2 = read_optic_flow(p2)
+    # print(f1)
+    # print(f2)
+
+    # print(make_consistency_for_temporal_loss(2))
     # data = read_consistency(r'../output/optic_flow/reliable_2_3.pgm')
     # cv2.imshow('', data)
     # cv2.waitKey(0)

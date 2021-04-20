@@ -158,5 +158,6 @@ if __name__ == '__main__':
     the_save_path = r"../output/transition.mp4"
 
     # compare_videos_stack(the_source_video, the_style_image, the_output_video, the_save_path)
-    vis_optic_flow(r'../output/optic_flow/forward_1_2.flo', save_path=r'../output/optic_flow.jpg')
+    vis_optic_flow(r'C:\Users\zichu\Downloads\backward_2_1.flo', save_path=r'C:\Users\zichu\Downloads\optic_flow_std.jpg')
+    # vis_optic_flow(r'../output/optic_flow/backward_2_1.flo', save_path=r'C:\Users\zichu\Downloads\optic_flow_ori.jpg')
     pass
