@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow_addons.image import dense_image_warp
 import numpy as np
 import cv2
+import moviepy
 import moviepy.editor as mpy
 from moviepy.video.fx.crop import crop
 from tqdm import tqdm
@@ -244,10 +245,8 @@ def frames_to_video(frame_folder, video_path, n_pass=TrainParam.n_passes, img_fo
 
     file_list = glob.glob(join(frame_folder, '*_p{}.{}'.format(n_pass, img_format)))
     file_list.sort(key=lambda x: int(splitext(basename(x))[0].split('_')[0]))
-    duration = 1 / DatasetParam.video_fps
-    clips = [mpy.ImageClip(x).set_duration(duration) for x in file_list]
-    clips = mpy.concatenate_videoclips(clips, method="compose")
-    clips.write_videofile(video_path, fps=DatasetParam.video_fps)
+    clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(file_list, fps=DatasetParam.video_fps)
+    clip.write_videofile(video_path)
 
     return
 
