@@ -2,8 +2,8 @@ class DatasetParam:
     """
     Hyper-parameters for utils/dataset.py
     """
-    img_w = 450  # image width
-    img_h = 350  # image height
+    img_w = 450  # image width, should be EVEN, or the final .mp4 video may be crashed
+    img_h = 350  # image height, should be EVEN, or the final .mp4 video may be crashed
 
     use_video = True  # Style transfer with a video or an image. True: video; False: image
     content_img_path = r'demo/dog.jpg'

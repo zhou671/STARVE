@@ -67,9 +67,11 @@ def train():
                 tf_train_step = tf.function(train_step)
 
             optimizer = get_optimizer()
-            frame_idx = int(splitext(basename(content_img_path))[0])
+            frame_idx = int(splitext(basename(content_img_path))[0]) \
+                if DatasetParam.use_video else splitext(basename(content_img_path))[0]
             content_target = model(tf.constant(load_img(content_img_path)))['content']
-            generated_image = init_generated_image(frame_idx, n_pass, n_img == 0)
+            generated_image = init_generated_image(frame_idx, n_pass, n_img == 0) \
+                if DatasetParam.use_video else tf.Variable(load_img(content_img_path))
 
             # component for temporal loss
             warped_images, consistency_weights = None, None
@@ -89,7 +91,7 @@ def train():
                 if (step + 1) % TrainParam.draw_step == 0:
                     # save intermediate result
                     cv2.imwrite(join(TrainParam.iter_img_dir, "{}_p{}.{}"
-                                     .format(step + 1, n_pass + 1, DatasetParam.img_fmt)),
+                                     .format(step + 1, n_pass, DatasetParam.img_fmt)),
                                 tensor_to_image(generated_image))
             else:
                 save_path = join(TrainParam.stylized_img_dir,
