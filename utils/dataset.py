@@ -358,7 +358,8 @@ def init_generated_image(frame_idx, n_pass=1, is_start=False):
             generated_image = tf.random.truncated_normal(
                 shape=[1, DatasetParam.img_h, DatasetParam.img_w, 3],
                 stddev=63.75)
-
+        elif DatasetParam.optic_flow_method == 'liteF':
+            print("Using liteflownet for optical flow...Please use opticFlow/liteflownet/generate.py to generate .flo file and put .flo files back to output/optic_flow folder..")
         else:
             raise ValueError("Unknown method to initialize the first image: {}"
                              .format(DatasetParam.init_generated_image_method))

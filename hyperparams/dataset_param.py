@@ -17,6 +17,7 @@ class DatasetParam:
     # 'dm_df2': DeepMatching + DeepFlow2, the best quality
     # 'df2': DeepFlow2 only, 2~3s per frame
     # 'std': Sparse to Dense, 10 fps
+    # 'liteF': liteFlowNet
     optic_flow_method = 'dm_df2'
 
     # method to initialize the stylized image
