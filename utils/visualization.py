@@ -126,6 +126,51 @@ def compare_videos_stack(src_video_path, style_img_path, stylized_video_path, sa
 
     return final
 
+def four_vid(vid_list, txt_list, save_path="output/stacked.mp4", roll=False):
+    """
+    Show four vids in a quandrant with captions for each.
+    With credits to: https://zulko.github.io/moviepy/examples/ukulele_concerto.html 
+    :param vid_list: a list of paths to 4 videos
+    :param txt_list: a list of captions will be used on 4 vids
+    :param save_path: path to save the output video
+    :return:
+        final: The output video.
+    """
+    clps = [clip1, clip2, clip3, clip4] = [mpy.VideoFileClip(vid_list[i]).resize(height=360).margin(5) for i in range(4)]
+
+
+    for i in range(4):
+
+        # align video length
+        if clps[i].duration > clps[0].duration:
+            clps[i] = clps[i].subclip(0, src_video.duration)
+        if clps[i].size != clps[0].size:
+            clps[i] = resize_video(clps[i],clps[0].w, clps[0].h)
+
+        # # TxtClip Error. Seems will be fixed in v2.0
+        # # A CLIP WITH A TEXT AND A BLACK SEMI-OPAQUE BACKGROUND
+        # txt = mpy.TextClip(txt_list[i], font='Amiri-regular',
+        #                    color='white',fontsize=24)
+        # txt_col = txt.on_color(size=(clps[i].w + txt.w,txt.h-10),
+        #                 color=(0,0,0), pos=(6,'center'), col_opacity=0.6)
+
+        # if roll:
+        #     # THE TEXT CLIP IS ANIMATED
+        #     txt_mov = txt_col.set_pos( lambda t: (max(clps[i].w/30,int(clps[i].w-0.5*clps[i].w*t)),
+        #                                     max(5*clps[i].h/6,int(100*t))) )
+        # else:
+        #     txt_mov = txt_col.set_position('center')
+        # # FINAL ASSEMBLY
+        # clps[i] = mpy.CompositeVideoClip([clps[i],txt_mov])
+
+
+    final = mpy.clips_array([[clip1, clip2],
+                             [clip3, clip4]])
+    if save_path:
+        final.resize(height=576,width=720).write_videofile(save_path)
+
+    return final
+
 
 def vis_optic_flow(flow_input, bgr=False, save_path=""):
     """
