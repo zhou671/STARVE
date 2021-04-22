@@ -205,4 +205,15 @@ if __name__ == '__main__':
     # compare_videos_stack(the_source_video, the_style_image, the_output_video, the_save_path)
     vis_optic_flow(r'C:\Users\zichu\Downloads\backward_2_1.flo', save_path=r'C:\Users\zichu\Downloads\optic_flow_std.jpg')
     # vis_optic_flow(r'../output/optic_flow/backward_2_1.flo', save_path=r'C:\Users\zichu\Downloads\optic_flow_ori.jpg')
+    
+    vid_list = ["../final/STRAVE/output/1pass-trained.mp4",
+                "../final/STRAVE/output/5pass-trained.mp4",
+                "../final/STRAVE/output/10pass-trained.mp4",
+                "../final/STRAVE/output/15pass.mp4"]
+    txt_list = ["n_pass = 1",
+                "n_pass = 5",
+                "n_pass = 10",
+                "n_pass = 15"]
+    four_vid(vid_list, txt_list)
+    
     pass
