@@ -26,7 +26,7 @@ See this notebook tutorial for how to compile
 [DeepMatching-GPU](https://thoth.inrialpes.fr/src/deepmatching/) (optional). 
 <a href="https://colab.research.google.com/github/zhou671/STRAVE/blob/master/compile-caffe-and-deepmatching-gpu-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
-**Deliverables**:
+**Deliverables**:  
 [Report]()  
 [Slides](https://docs.google.com/presentation/d/1dJDt8xB92ljd9HKefz_WP4k5leUGgdYZpiRoiVlTr3Y/edit?usp=sharing)  
 [Presentation]()
