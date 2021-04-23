@@ -3,10 +3,10 @@
 This is the final project for class 
 [CSCI 1430: Introduction to Computer Vision](https://browncsci1430.github.io/webpage/).
 
-**Team members** (alphabetical by first name):  
-[Yicheng Shi](https://github.com/yshi77),  
-[Yuchen Zhou](https://github.com/zhou671),  
-[Yue Wang](https://github.com/yuewangpl),   
+**Team members** (alphabetical by first name): 
+[Yicheng Shi](https://github.com/yshi77), 
+[Yuchen Zhou](https://github.com/zhou671), 
+[Yue Wang](https://github.com/yuewangpl),  
 and [Zichuan Wang](https://github.com/GuardianWang).
 
 In this project, we explored **video style transfer** with TensorFlow2.
