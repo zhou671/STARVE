@@ -4,7 +4,7 @@ and consistency weights (`.pgm` files).
 See this notebook tutorial for how to compile 
 [Caffe](https://caffe.berkeleyvision.org) and 
 [DeepMatching-GPU](https://thoth.inrialpes.fr/src/deepmatching/) (optional). 
-<a href="https://colab.research.google.com/github/zhou671/STRAVE/blob/master/compile-caffe-and-deepmatching-gpu-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+<a href="https://colab.research.google.com/github/zhou671/STARVE/blob/master/compile-caffe-and-deepmatching-gpu-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 `./consistencyChecker/`, `makeOptFlow.sh`, `run-deepflow.sh`
 are copied from [manuelruder/artistic-videos](https://github.com/manuelruder/artistic-videos).

@@ -19,12 +19,12 @@ We also refer to in this
 for basic functions.
 
 See this notebook tutorial for how to run the model.
-<a href="https://colab.research.google.com/github/zhou671/STRAVE/blob/master/run-style-transfer-for-videos-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+<a href="https://colab.research.google.com/github/zhou671/STARVE/blob/master/run-style-transfer-for-videos-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 See this notebook tutorial for how to compile 
 [Caffe](https://caffe.berkeleyvision.org) and 
 [DeepMatching-GPU](https://thoth.inrialpes.fr/src/deepmatching/) (optional). 
-<a href="https://colab.research.google.com/github/zhou671/STRAVE/blob/master/compile-caffe-and-deepmatching-gpu-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+<a href="https://colab.research.google.com/github/zhou671/STARVE/blob/master/compile-caffe-and-deepmatching-gpu-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 **Deliverables**:  
 [Report]()  
