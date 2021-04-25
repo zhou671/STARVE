@@ -27,7 +27,7 @@ See this notebook tutorial for how to compile
 <a href="https://colab.research.google.com/github/zhou671/STARVE/blob/master/compile-caffe-and-deepmatching-gpu-tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 **Deliverables**:  
-[Report]()  
+[Report](https://github.com/zhou671/STARVE/blob/master/project6_teamfinal.pdf)  
 [Slides](https://docs.google.com/presentation/d/1dJDt8xB92ljd9HKefz_WP4k5leUGgdYZpiRoiVlTr3Y/edit?usp=sharing)  
 [Video Demo](https://youtu.be/i5yk5Y3pp4g)
 
